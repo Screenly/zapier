@@ -229,13 +229,25 @@ Control playlist visibility dynamically:
    npm install
    ```
 
-2. Configure your Screenly API key:
+2. Set up pre-commit hooks:
 
-   * Get your API key from [Screenly Settings](
-     https://app.screenlyapp.com/settings/api-keys
-     )
-   * When setting up the Zapier integration, you'll be prompted to enter this
-     API key
+   ```bash
+   # Install husky and lint-staged
+   npm install -D husky lint-staged
+
+   # Initialize husky
+   npm run prepare
+
+   # Add pre-commit hook
+   npx husky add .husky/pre-commit "npm test && npm run lint"
+
+   # Install linting tools
+   npm install -D eslint prettier markdownlint-cli
+   ```
+
+3. Configure your Screenly API key:
+   * Get your API key from [Screenly Settings](https://app.screenlyapp.com/settings/api-keys)
+   * When setting up the Zapier integration, you'll be prompted to enter this API key
 
 ### Available Scripts
 
@@ -260,6 +272,7 @@ The project uses several tools to ensure code quality:
 * **Jest** - For testing
 * **Husky** - For git hooks
 * **lint-staged** - For running checks on staged files
+* **markdownlint** - For markdown formatting
 
 These run automatically on commit, but you can also run them manually:
 
@@ -272,9 +285,19 @@ npm run format  # Fix code formatting
 
 Pre-commit hooks are set up to:
 
+* Run unit tests
 * Lint JavaScript files
 * Format code with Prettier
+* Check markdown formatting
 * Run tests
+
+The hooks are configured in:
+
+* `.husky/pre-commit` - Hook scripts
+* `package.json` - lint-staged configuration
+* `.eslintrc.js` - ESLint rules
+* `.prettierrc` - Prettier configuration
+* `.markdownlint.json` - Markdown linting rules
 
 ### Visual Testing
 
@@ -318,5 +341,3 @@ These tests are skipped locally to avoid environment-specific issues.
 ### License
 
 See [LICENSE](LICENSE) file for details.
-
-```</rewritten_file>
