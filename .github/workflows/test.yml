@@ -97,7 +97,5 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: visual-test-screenshots
-        path: |
-          test/__image_snapshots__/*.png
-          visual-test-results.json
+        path: test/__image_snapshots__
         if-no-files-found: warn
