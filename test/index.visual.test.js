@@ -98,9 +98,11 @@ describeVisual('Zapier Visual Tests', () => {
     // Take a screenshot of the form
     const screenshot = await page.screenshot({
       type: 'png',
-      encoding: 'binary'
+      encoding: null,
+      omitBackground: true,
+      fullPage: true
     });
-    expect(screenshot).toMatchImageSnapshot();
+    expect(Buffer.from(screenshot)).toMatchImageSnapshot();
   });
 
   test('Complete Workflow Form', async () => {
@@ -162,9 +164,11 @@ describeVisual('Zapier Visual Tests', () => {
     // Take a screenshot of the complete workflow form
     const screenshot = await page.screenshot({
       type: 'png',
-      encoding: 'binary'
+      encoding: null,
+      omitBackground: true,
+      fullPage: true
     });
-    expect(screenshot).toMatchImageSnapshot();
+    expect(Buffer.from(screenshot)).toMatchImageSnapshot();
   });
 
   test('Cleanup Confirmation Form', async () => {
@@ -198,8 +202,10 @@ describeVisual('Zapier Visual Tests', () => {
     // Take a screenshot of the cleanup confirmation form
     const screenshot = await page.screenshot({
       type: 'png',
-      encoding: 'binary'
+      encoding: null,
+      omitBackground: true,
+      fullPage: true
     });
-    expect(screenshot).toMatchImageSnapshot();
+    expect(Buffer.from(screenshot)).toMatchImageSnapshot();
   });
 });

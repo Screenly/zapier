@@ -72,11 +72,13 @@ jobs:
           jq -r '"| \(.numTotalTests) | \(.numPassedTests) | \(.numFailedTests) | \(.numPendingTests) |"' visual-test-results.json >> $GITHUB_STEP_SUMMARY
         fi
 
+        # Create a flat directory for artifacts
+        mkdir -p artifacts
+        cp __image_snapshots__/*.png artifacts/
+
     - name: Upload artifacts
       if: always()
       uses: actions/upload-artifact@v4
       with:
         name: screenshots
-        path: |
-          ./__image_snapshots__
-          ./visual-test-results.json
+        path: artifacts/
