@@ -70,17 +70,28 @@ jobs:
           echo "| Total | Passed | Failed | Skipped |" >> $GITHUB_STEP_SUMMARY
           echo "|-------|---------|---------|----------|" >> $GITHUB_STEP_SUMMARY
           jq -r '"| \(.numTotalTests) | \(.numPassedTests) | \(.numFailedTests) | \(.numPendingTests) |"' visual-test-results.json >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
         fi
 
         # Show screenshots in summary
-        echo "## Screenshots" >> $GITHUB_STEP_SUMMARY
-        for img in __image_snapshots__/*.png; do
-          name=$(basename "$img" | sed 's/ci-//' | sed 's/-1.png//')
-          echo "### $name" >> $GITHUB_STEP_SUMMARY
-          echo "<details><summary>View Screenshot</summary>" >> $GITHUB_STEP_SUMMARY
-          echo "<img src=\"data:image/png;base64,$(base64 -w 0 "$img")\" width=\"800\">" >> $GITHUB_STEP_SUMMARY
-          echo "</details>" >> $GITHUB_STEP_SUMMARY
-        done
+        {
+          echo "## Screenshots"
+          echo ""
+          for img in __image_snapshots__/ci-*.png; do
+            if [ -f "$img" ]; then
+              name=$(basename "$img" | sed -E 's/ci-Zapier Visual Tests (.+)-1\.png/\1/')
+              echo "### $name"
+              echo ""
+              echo "<details>"
+              echo "<summary>View Screenshot</summary>"
+              echo ""
+              echo "<img src=\"data:image/png;base64,$(base64 -w 0 "$img")\" width=\"800\">"
+              echo ""
+              echo "</details>"
+              echo ""
+            fi
+          done
+        } >> $GITHUB_STEP_SUMMARY
 
         # Create a flat directory for artifacts
         mkdir -p artifacts
