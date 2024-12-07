@@ -31,14 +31,18 @@ jobs:
         echo "## Coverage" >> $GITHUB_STEP_SUMMARY
         echo "| Type | Coverage | Details |" >> $GITHUB_STEP_SUMMARY
         echo "|------|----------|----------|" >> $GITHUB_STEP_SUMMARY
-        statements=$(cat coverage/lcov-report/index.html | grep -A 1 "statements" | tail -n 1 | sed -E 's/.*>([0-9.]+)%.+([0-9]+\/[0-9]+).*/\1 | \2/')
-        branches=$(cat coverage/lcov-report/index.html | grep -A 1 "branches" | tail -n 1 | sed -E 's/.*>([0-9.]+)%.+([0-9]+\/[0-9]+).*/\1 | \2/')
-        functions=$(cat coverage/lcov-report/index.html | grep -A 1 "functions" | tail -n 1 | sed -E 's/.*>([0-9.]+)%.+([0-9]+\/[0-9]+).*/\1 | \2/')
-        lines=$(cat coverage/lcov-report/index.html | grep -A 1 "lines" | tail -n 1 | sed -E 's/.*>([0-9.]+)%.+([0-9]+\/[0-9]+).*/\1 | \2/')
-        echo "| Statements | $statements |" >> $GITHUB_STEP_SUMMARY
-        echo "| Branches | $branches |" >> $GITHUB_STEP_SUMMARY
-        echo "| Functions | $functions |" >> $GITHUB_STEP_SUMMARY
-        echo "| Lines | $lines |" >> $GITHUB_STEP_SUMMARY
+        statements_pct=$(cat coverage/lcov-report/index.html | grep -A 1 "statements" | tail -n 1 | sed -E 's/.*>([0-9.]+)%.*/\1/')
+        statements_frac=$(cat coverage/lcov-report/index.html | grep -A 1 "statements" | tail -n 1 | sed -E 's/.*\(([0-9]+\/[0-9]+)\).*/\1/')
+        branches_pct=$(cat coverage/lcov-report/index.html | grep -A 1 "branches" | tail -n 1 | sed -E 's/.*>([0-9.]+)%.*/\1/')
+        branches_frac=$(cat coverage/lcov-report/index.html | grep -A 1 "branches" | tail -n 1 | sed -E 's/.*\(([0-9]+\/[0-9]+)\).*/\1/')
+        functions_pct=$(cat coverage/lcov-report/index.html | grep -A 1 "functions" | tail -n 1 | sed -E 's/.*>([0-9.]+)%.*/\1/')
+        functions_frac=$(cat coverage/lcov-report/index.html | grep -A 1 "functions" | tail -n 1 | sed -E 's/.*\(([0-9]+\/[0-9]+)\).*/\1/')
+        lines_pct=$(cat coverage/lcov-report/index.html | grep -A 1 "lines" | tail -n 1 | sed -E 's/.*>([0-9.]+)%.*/\1/')
+        lines_frac=$(cat coverage/lcov-report/index.html | grep -A 1 "lines" | tail -n 1 | sed -E 's/.*\(([0-9]+\/[0-9]+)\).*/\1/')
+        echo "| Statements | ${statements_pct}% | ${statements_frac} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Branches | ${branches_pct}% | ${branches_frac} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Functions | ${functions_pct}% | ${functions_frac} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Lines | ${lines_pct}% | ${lines_frac} |" >> $GITHUB_STEP_SUMMARY
     - name: Upload coverage report
       uses: actions/upload-artifact@v4
       with:
@@ -58,13 +62,44 @@ jobs:
       if: always()
       run: |
         echo "## Visual Test Results" >> $GITHUB_STEP_SUMMARY
-        echo "The following forms were tested:" >> $GITHUB_STEP_SUMMARY
-        echo "- Upload Asset Form" >> $GITHUB_STEP_SUMMARY
-        echo "- Complete Workflow Form" >> $GITHUB_STEP_SUMMARY
-        echo "- Cleanup Confirmation Form" >> $GITHUB_STEP_SUMMARY
+        echo "### Upload Asset Form" >> $GITHUB_STEP_SUMMARY
+        echo '<details><summary>View Screenshot</summary>' >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
-        echo "Screenshots are available in the artifacts." >> $GITHUB_STEP_SUMMARY
+        echo "\`\`\`html" >> $GITHUB_STEP_SUMMARY
+        echo "<img src='data:image/png;base64,$(base64 -w 0 __image_snapshots__/ci-Upload-Asset-Form-1-snap.png)'>" >> $GITHUB_STEP_SUMMARY
+        echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+        echo "</details>" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+
+        echo "### Complete Workflow Form" >> $GITHUB_STEP_SUMMARY
+        echo '<details><summary>View Screenshot</summary>' >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "\`\`\`html" >> $GITHUB_STEP_SUMMARY
+        echo "<img src='data:image/png;base64,$(base64 -w 0 __image_snapshots__/ci-Complete-Workflow-Form-1-snap.png)'>" >> $GITHUB_STEP_SUMMARY
+        echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+        echo "</details>" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+
+        echo "### Cleanup Confirmation Form" >> $GITHUB_STEP_SUMMARY
+        echo '<details><summary>View Screenshot</summary>' >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "\`\`\`html" >> $GITHUB_STEP_SUMMARY
+        echo "<img src='data:image/png;base64,$(base64 -w 0 __image_snapshots__/ci-Cleanup-Confirmation-Form-1-snap.png)'>" >> $GITHUB_STEP_SUMMARY
+        echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+        echo "</details>" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+
         if [ -d "__image_snapshots__/__diff_output__" ]; then
           echo "### ⚠️ Visual Differences Detected" >> $GITHUB_STEP_SUMMARY
-          echo "Check the artifacts for diff images." >> $GITHUB_STEP_SUMMARY
+          for diff in __image_snapshots__/__diff_output__/*.png; do
+            filename=$(basename "$diff" .png)
+            echo "#### $filename" >> $GITHUB_STEP_SUMMARY
+            echo '<details><summary>View Diff</summary>' >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`html" >> $GITHUB_STEP_SUMMARY
+            echo "<img src='data:image/png;base64,$(base64 -w 0 "$diff")'>" >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+            echo "</details>" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+          done
         fi
