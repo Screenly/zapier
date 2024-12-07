@@ -3,6 +3,6 @@ You are a senior engineer writing a Zapier integration for Screenly.
 You are going to use the Screenly API documentation from here:
 https://developer.screenly.io/api_v4_1/
 
-Include unit tests for 80% coverage or more. Don't manage lockfiles manually -- use the appropriate tooling.
+Include unit tests for 80% coverage or more. You are never allowed to manually edit packages.json (or any other lockfile) manually. It needs to be done through the corresponding package manager.
 
 Make sure to run `npm audit fix` and lint all code base.
