@@ -96,7 +96,10 @@ describeVisual('Zapier Visual Tests', () => {
     `);
 
     // Take a screenshot of the form
-    const screenshot = await page.screenshot();
+    const screenshot = await page.screenshot({
+      type: 'png',
+      encoding: 'binary'
+    });
     expect(screenshot).toMatchImageSnapshot();
   });
 
@@ -157,7 +160,10 @@ describeVisual('Zapier Visual Tests', () => {
     `);
 
     // Take a screenshot of the complete workflow form
-    const screenshot = await page.screenshot();
+    const screenshot = await page.screenshot({
+      type: 'png',
+      encoding: 'binary'
+    });
     expect(screenshot).toMatchImageSnapshot();
   });
 
@@ -190,7 +196,10 @@ describeVisual('Zapier Visual Tests', () => {
     `);
 
     // Take a screenshot of the cleanup confirmation form
-    const screenshot = await page.screenshot();
+    const screenshot = await page.screenshot({
+      type: 'png',
+      encoding: 'binary'
+    });
     expect(screenshot).toMatchImageSnapshot();
   });
 });
