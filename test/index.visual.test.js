@@ -2,7 +2,6 @@
 
 require('./setup.visual');
 const puppeteer = require('puppeteer');
-const nock = require('nock');
 
 // Skip all visual tests if not in CI environment
 const describeVisual = process.env.CI ? describe : describe.skip;

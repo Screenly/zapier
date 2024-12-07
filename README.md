@@ -94,17 +94,17 @@ These tests are skipped locally to avoid environment-specific issues.
 2. **Playlist-Specific Libraries**
     * Separate libraries for different content types
     * Examples:
-        * `DS-Announcements`
-        * `DS-Marketing`
-        * `DS-Events`
-        * `DS-Emergency`
+        * `[Zapier] Announcements`
+        * `[Zapier] Marketing`
+        * `[Zapier] Events`
+        * `[Zapier] Emergency`
 
 3. **Location-Based Libraries**
     * Organize by physical location
     * Examples:
-        * `DS-HeadOffice`
-        * `DS-Branches`
-        * `DS-RetailStores`
+        * `[Zapier] HeadOffice`
+        * `[Zapier] Branches`
+        * `[Zapier] RetailStores`
 
 ### SharePoint Column Configuration
 
@@ -148,7 +148,7 @@ Action: Screenly - Complete Workflow
 4. **Emergency Broadcast**
 
 ```yaml
-Trigger: SharePoint - New file in DS-Emergency
+Trigger: SharePoint - New file in [Zapier] Emergency
 Action: Screenly - Complete Workflow (high priority)
 ```
 
