@@ -54,9 +54,8 @@ jobs:
         path: coverage/
     - name: Run visual tests
       run: |
-        # Create snapshot directories
+        # Create snapshot directory
         mkdir -p test/__image_snapshots__
-        mkdir -p test/__image_snapshots__/__diff_output__
 
         # Run tests with update flag to generate snapshots and JSON output
         CI=1 xvfb-run --auto-servernum --server-args="-screen 0 1280x800x24" npm run test:visual:ci -- -u --json --outputFile=visual-test-results.json
@@ -83,47 +82,24 @@ jobs:
         echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
 
-        # Function to embed image
-        embed_image() {
-          local img="$1"
+        # Show screenshots
+        echo "### Screenshots" >> $GITHUB_STEP_SUMMARY
+        shopt -s nullglob  # Handle case when no files match pattern
+        for img in test/__image_snapshots__/*.png; do
           if [ -f "$img" ]; then
-            echo "Found image: $img" >> $GITHUB_STEP_SUMMARY
+            name=$(basename "$img" -snap.png | sed 's/ci-//')
+            echo "#### $name" >> $GITHUB_STEP_SUMMARY
             echo "<details><summary>$(basename "$img")</summary>" >> $GITHUB_STEP_SUMMARY
             echo "<img src=\"data:image/png;base64,$(base64 -w 0 "$img")\" width=\"800\">" >> $GITHUB_STEP_SUMMARY
             echo "</details>" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "Image not found: $img" >> $GITHUB_STEP_SUMMARY
           fi
-        }
-
-        # Show each screenshot
-        echo "### Screenshots" >> $GITHUB_STEP_SUMMARY
-        shopt -s nullglob  # Handle case when no files match pattern
-        for img in test/__image_snapshots__/*.png; do
-          name=$(basename "$img" -snap.png | sed 's/ci-//')
-          echo "#### $name" >> $GITHUB_STEP_SUMMARY
-          embed_image "$img"
         done
-
-        # Show any diffs
-        if [ -d "test/__image_snapshots__/__diff_output__" ]; then
-          echo "### ⚠️ Visual Differences" >> $GITHUB_STEP_SUMMARY
-          for diff in test/__image_snapshots__/__diff_output__/*.png; do
-            if [ -f "$diff" ]; then
-              name=$(basename "$diff" .png | sed 's/ci-//' | sed 's/-diff//')
-              echo "#### $name (diff)" >> $GITHUB_STEP_SUMMARY
-              embed_image "$diff"
-            fi
-          done
-        fi
 
     - name: Upload screenshots
       if: always()
       uses: actions/upload-artifact@v4
       with:
         name: visual-test-screenshots
-        path: |
-          test/__image_snapshots__/*.png
-          test/__image_snapshots__/__diff_output__/*.png
+        path: test/__image_snapshots__/*.png
         if-no-files-found: warn
