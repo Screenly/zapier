@@ -12,75 +12,43 @@ jobs:
     strategy:
       matrix:
         node-version: [20.x]
-
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v3
+      uses: actions/setup-node@v4
       with:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
-    - run: npm ci
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libgbm-dev
+        npm ci
     - name: Run tests with coverage
       run: |
         npm test
         echo "# Test Results (Node ${{ matrix.node-version }})" >> $GITHUB_STEP_SUMMARY
-        echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-        cat coverage/lcov-report/index.html | grep -A 4 "<div class='fl pad1y space-right2'>" | grep -v "<div" | sed 's/<span class="strong">//g' | sed 's/<\/span>//g' | sed 's/^[ \t]*//' >> $GITHUB_STEP_SUMMARY
-        echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-        echo "## Coverage Report" >> $GITHUB_STEP_SUMMARY
+        echo "## Coverage" >> $GITHUB_STEP_SUMMARY
+        echo "| Type | Coverage | Details |" >> $GITHUB_STEP_SUMMARY
+        echo "|------|----------|----------|" >> $GITHUB_STEP_SUMMARY
+        echo "| Statements | $(cat coverage/lcov-report/index.html | grep -A 1 "statements" | tail -n 1 | sed 's/.*>\([0-9.]*\)%.*/\1/') % | $(cat coverage/lcov-report/index.html | grep -A 1 "statements" | tail -n 1 | sed 's/.*(\([0-9]*\/[0-9]*\)).*/\1/') |" >> $GITHUB_STEP_SUMMARY
+        echo "| Branches | $(cat coverage/lcov-report/index.html | grep -A 1 "branches" | tail -n 1 | sed 's/.*>\([0-9.]*\)%.*/\1/') % | $(cat coverage/lcov-report/index.html | grep -A 1 "branches" | tail -n 1 | sed 's/.*(\([0-9]*\/[0-9]*\)).*/\1/') |" >> $GITHUB_STEP_SUMMARY
+        echo "| Functions | $(cat coverage/lcov-report/index.html | grep -A 1 "functions" | tail -n 1 | sed 's/.*>\([0-9.]*\)%.*/\1/') % | $(cat coverage/lcov-report/index.html | grep -A 1 "functions" | tail -n 1 | sed 's/.*(\([0-9]*\/[0-9]*\)).*/\1/') |" >> $GITHUB_STEP_SUMMARY
+        echo "| Lines | $(cat coverage/lcov-report/index.html | grep -A 1 "lines" | tail -n 1 | sed 's/.*>\([0-9.]*\)%.*/\1/') % | $(cat coverage/lcov-report/index.html | grep -A 1 "lines" | tail -n 1 | sed 's/.*(\([0-9]*\/[0-9]*\)).*/\1/') |" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
         echo "Full coverage report available as artifact." >> $GITHUB_STEP_SUMMARY
     - name: Upload coverage report
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
-        name: coverage-report-${{ matrix.node-version }}
-        path: coverage
-        retention-days: 14
-
-  visual-test:
-    runs-on: ubuntu-latest
-    needs: test
-    container:
-      image: mcr.microsoft.com/playwright:v1.40.0-jammy
-    steps:
-    - uses: actions/checkout@v3
-    - name: Use Node.js 20.x
-      uses: actions/setup-node@v3
-      with:
-        node-version: 20.x
-        cache: 'npm'
-    - run: npm ci
+        name: coverage-report
+        path: coverage/
     - name: Run visual tests
-      run: |
-        xvfb-run --auto-servernum --server-args="-screen 0 1280x800x24" npm run test:visual:ci -- -u
-        echo "# Visual Test Results" >> $GITHUB_STEP_SUMMARY
-        echo "## Screenshots" >> $GITHUB_STEP_SUMMARY
-        echo "The following forms were tested:" >> $GITHUB_STEP_SUMMARY
-        echo "- Upload Asset Form" >> $GITHUB_STEP_SUMMARY
-        echo "- Complete Workflow Form" >> $GITHUB_STEP_SUMMARY
-        echo "- Cleanup Confirmation Form" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "Screenshots are available in the artifacts." >> $GITHUB_STEP_SUMMARY
-        if [ -d "__image_snapshots__/__diff_output__" ]; then
-          echo "## Visual Differences Detected" >> $GITHUB_STEP_SUMMARY
-          echo "Check the artifacts for diff images." >> $GITHUB_STEP_SUMMARY
-        fi
+      run: xvfb-run --auto-servernum --server-args="-screen 0 1280x800x24" npm run test:visual:ci -- -u
     - name: Upload visual test artifacts
       if: always()
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
-        name: visual-test-output
+        name: visual-test-artifacts
         path: |
           __image_snapshots__
-          __image_snapshots__/__diff_output__
-        retention-days: 14
-    - name: Generate visual test report
-      if: always()
-      run: |
-        echo "## Visual Test Summary" >> $GITHUB_STEP_SUMMARY
-        echo "### Base Screenshots" >> $GITHUB_STEP_SUMMARY
-        ls -l __image_snapshots__ | grep -v diff | awk '{print "- "$9}' >> $GITHUB_STEP_SUMMARY
-        if [ -d "__image_snapshots__/__diff_output__" ]; then
-          echo "### Diff Images" >> $GITHUB_STEP_SUMMARY
-          ls -l __image_snapshots__/__diff_output__ | awk '{print "- "$9}' >> $GITHUB_STEP_SUMMARY
-        fi
+          __image_snapshots__-diff

@@ -21,9 +21,9 @@ describeVisual('Zapier Visual Tests', () => {
         '--disable-setuid-sandbox',
         '--disable-dev-shm-usage',
         '--disable-gpu',
-        '--disable-software-rasterizer',
+        '--window-size=1280,800',
         '--disable-web-security',
-        '--single-process'
+        '--disable-features=IsolateOrigins,site-per-process'
       ],
       ignoreHTTPSErrors: true,
       defaultViewport: {

@@ -1,11 +1,11 @@
 module.exports = {
-  testEnvironment: 'jsdom',
-  testTimeout: 30000,
-  testMatch: process.env.CI ? ['**/test/**/*.visual.test.js'] : [],
-  setupFilesAfterEnv: ['./test/setup.visual.js'],
+  testEnvironment: 'node',
+  testMatch: ['**/test/*.visual.test.js'],
   transform: {
-    '^.+\\.js$': 'babel-jest'
+    '^.+\\.jsx?$': 'babel-jest'
   },
+  setupFilesAfterEnv: ['./test/setup.visual.js'],
+  testTimeout: 30000,
   moduleNameMapper: {
     '^(\\.{1,2}/.*)\\.js$': '$1'
   },
