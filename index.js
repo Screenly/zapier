@@ -1,5 +1,4 @@
 const FormData = require('form-data');
-const fetch = require('node-fetch');
 
 // Authentication setup
 const authentication = {
@@ -23,9 +22,18 @@ const authentication = {
   ]
 };
 
+// Helper to handle error responses
+const handleError = (response, customMessage) => {
+  if (response.status >= 400) {
+    throw new Error(customMessage);
+  }
+  return response.json;
+};
+
 // Helper to make authenticated requests
 const makeRequest = async (z, url, options = {}) => {
-  const response = await fetch(url, {
+  const response = await z.request({
+    url,
     ...options,
     headers: {
       ...options.headers,
@@ -33,12 +41,7 @@ const makeRequest = async (z, url, options = {}) => {
     }
   });
 
-  if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`Screenly API Error: ${response.status} ${error}`);
-  }
-
-  return response.json();
+  return handleError(response, 'Screenly API Error');
 };
 
 // Upload Asset Action
@@ -76,19 +79,23 @@ const uploadAsset = {
     ],
     perform: async (z, bundle) => {
       // First, fetch the file
-      const fileResponse = await fetch(bundle.inputData.file);
-      if (!fileResponse.ok) {
+      const fileResponse = await z.request({
+        url: bundle.inputData.file,
+        raw: true
+      });
+
+      if (fileResponse.status >= 400) {
         throw new Error(`Failed to fetch file: ${fileResponse.status}`);
       }
-      const buffer = await fileResponse.buffer();
 
       // Create form data
       const formData = new FormData();
       formData.append('title', bundle.inputData.title);
       formData.append('duration', bundle.inputData.duration || 10);
-      formData.append('file', buffer, 'asset');
+      formData.append('file', fileResponse.body, 'asset');
 
-      const response = await fetch('https://api.screenlyapp.com/api/v4/assets/', {
+      const response = await z.request({
+        url: 'https://api.screenlyapp.com/api/v4/assets/',
         method: 'POST',
         headers: {
           Authorization: `Token ${bundle.authData.api_key}`
@@ -96,12 +103,7 @@ const uploadAsset = {
         body: formData
       });
 
-      if (!response.ok) {
-        const error = await response.text();
-        throw new Error(`Failed to upload asset: ${error}`);
-      }
-
-      return response.json();
+      return handleError(response, 'Failed to upload asset');
     }
   }
 };
@@ -158,20 +160,20 @@ const schedulePlaylistItem = {
     perform: async (z, bundle) => {
       // First, update the asset duration if specified
       if (bundle.inputData.duration) {
-        const assetResponse = await fetch(`https://api.screenlyapp.com/api/v4/assets/${bundle.inputData.asset_id}/`, {
+        const assetResponse = await z.request({
+          url: `https://api.screenlyapp.com/api/v4/assets/${bundle.inputData.asset_id}/`,
           method: 'PATCH',
           headers: {
             'Content-Type': 'application/json',
             Authorization: `Token ${bundle.authData.api_key}`
           },
-          body: JSON.stringify({
+          body: {
             duration: parseInt(bundle.inputData.duration, 10)
-          })
+          }
         });
 
-        if (!assetResponse.ok) {
-          const error = await assetResponse.text();
-          throw new Error(`Failed to update asset duration: ${error}`);
+        if (assetResponse.status >= 400) {
+          throw new Error(`Failed to update asset duration: ${assetResponse.content}`);
         }
       }
 
@@ -194,21 +196,21 @@ const schedulePlaylistItem = {
         payload.conditions = conditions;
       }
 
-      const response = await fetch('https://api.screenlyapp.com/api/v4/playlist-items/', {
+      const response = await z.request({
+        url: 'https://api.screenlyapp.com/api/v4/playlist-items/',
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Token ${bundle.authData.api_key}`
         },
-        body: JSON.stringify(payload)
+        body: payload
       });
 
-      if (!response.ok) {
-        const error = await response.text();
-        throw new Error(`Failed to add asset to playlist: ${error}`);
+      if (response.status >= 400) {
+        throw new Error(`Failed to add asset to playlist: ${response.content}`);
       }
 
-      return response.json();
+      return response.json;
     }
   }
 };
@@ -241,104 +243,89 @@ const assignScreenToPlaylist = {
       }
     ],
     perform: async (z, bundle) => {
-      const response = await fetch(`https://api.screenlyapp.com/api/v4/screens/${bundle.inputData.screen_id}/`, {
+      const response = await z.request({
+        url: `https://api.screenlyapp.com/api/v4/screens/${bundle.inputData.screen_id}/`,
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Token ${bundle.authData.api_key}`
         },
-        body: JSON.stringify({
+        body: {
           playlist: bundle.inputData.playlist_id
-        })
+        }
       });
 
-      if (!response.ok) {
-        const error = await response.text();
-        throw new Error(`Failed to assign screen to playlist: ${error}`);
+      if (response.status >= 400) {
+        throw new Error(`Failed to assign screen to playlist: ${response.content}`);
       }
 
-      return response.json();
+      return response.json;
     }
   }
 };
 
-// Get Screens Trigger (for dynamic dropdown)
+// Get Screens Trigger
 const getScreens = {
   key: 'get_screens',
   noun: 'Screen',
   display: {
     label: 'Get Screens',
-    hidden: true
+    description: 'Triggers when fetching screens list'
   },
   operation: {
     perform: async (z, bundle) => {
-      const response = await fetch('https://api.screenlyapp.com/api/v4/screens/', {
-        method: 'GET',
+      const response = await z.request({
+        url: 'https://api.screenlyapp.com/api/v4/screens/',
         headers: {
           Authorization: `Token ${bundle.authData.api_key}`
         }
       });
 
-      if (!response.ok) {
-        const error = await response.text();
-        throw new Error(`Failed to fetch screens: ${error}`);
-      }
-
-      return response.json();
+      return handleError(response, 'Failed to fetch screens');
     }
   }
 };
 
-// Get Playlists Trigger (for dynamic dropdown)
+// Get Playlists Trigger
 const getPlaylists = {
   key: 'get_playlists',
   noun: 'Playlist',
   display: {
     label: 'Get Playlists',
-    hidden: true
+    description: 'Triggers when fetching playlists list'
   },
   operation: {
     perform: async (z, bundle) => {
-      const response = await fetch('https://api.screenlyapp.com/api/v4/playlists/', {
-        method: 'GET',
+      const response = await z.request({
+        url: 'https://api.screenlyapp.com/api/v4/playlists/',
         headers: {
           Authorization: `Token ${bundle.authData.api_key}`
         }
       });
 
-      if (!response.ok) {
-        const error = await response.text();
-        throw new Error(`Failed to fetch playlists: ${error}`);
-      }
-
-      return response.json();
+      return handleError(response, 'Failed to fetch playlists');
     }
   }
 };
 
-// Get Assets Trigger (for dynamic dropdown)
+// Get Assets Trigger
 const getAssets = {
   key: 'get_assets',
   noun: 'Asset',
   display: {
     label: 'Get Assets',
-    hidden: true
+    description: 'Triggers when fetching assets list'
   },
   operation: {
     perform: async (z, bundle) => {
-      const response = await fetch('https://api.screenlyapp.com/api/v4/assets/', {
-        method: 'GET',
+      const response = await z.request({
+        url: 'https://api.screenlyapp.com/api/v4/assets/',
         headers: {
           Authorization: `Token ${bundle.authData.api_key}`
         }
       });
 
-      if (!response.ok) {
-        const error = await response.text();
-        throw new Error(`Failed to fetch assets: ${error}`);
-      }
-
-      return response.json();
+      return handleError(response, 'Failed to fetch assets');
     }
   }
 };
@@ -349,10 +336,10 @@ const ZAPIER_TAG = 'created_by_zapier';
 // Complete Workflow Action
 const completeWorkflow = {
   key: 'complete_workflow',
-  noun: 'Digital Signage Setup',
+  noun: 'Workflow',
   display: {
-    label: 'Add Content to Screen',
-    description: 'Upload an asset, add it to a playlist, and assign it to a screen'
+    label: 'Complete Workflow',
+    description: 'Upload asset, create/select playlist, and assign to screen'
   },
   operation: {
     inputFields: [
@@ -365,7 +352,7 @@ const completeWorkflow = {
       },
       {
         key: 'title',
-        label: 'Title',
+        label: 'Asset Title',
         type: 'string',
         required: true,
         helpText: 'Title of the asset'
@@ -376,22 +363,22 @@ const completeWorkflow = {
         type: 'integer',
         required: false,
         default: '10',
-        helpText: 'How long should this asset be shown (in seconds)'
+        helpText: 'How long should the asset be shown (in seconds)'
       },
       {
         key: 'playlist_id',
-        label: 'Playlist',
+        label: 'Existing Playlist',
         type: 'string',
         required: false,
         dynamic: 'get_playlists.id.name',
-        helpText: 'Select an existing playlist or leave empty to create a new one'
+        helpText: 'Select an existing playlist or create a new one'
       },
       {
         key: 'new_playlist_name',
         label: 'New Playlist Name',
         type: 'string',
         required: false,
-        helpText: 'If no playlist is selected above, enter a name for a new playlist'
+        helpText: 'Name for the new playlist (if not using existing)'
       },
       {
         key: 'screen_id',
@@ -399,38 +386,33 @@ const completeWorkflow = {
         type: 'string',
         required: true,
         dynamic: 'get_screens.id.name',
-        helpText: 'Select the screen to display this content'
-      },
-      {
-        key: 'start_date',
-        label: 'Start Date',
-        type: 'datetime',
-        required: false,
-        helpText: 'When should this content start being available for playback (optional)'
-      },
-      {
-        key: 'end_date',
-        label: 'End Date',
-        type: 'datetime',
-        required: false,
-        helpText: 'When should this content stop being available (optional)'
+        helpText: 'Select the screen to assign'
       }
     ],
     perform: async (z, bundle) => {
+      // Validate playlist information
+      if (!bundle.inputData.playlist_id && !bundle.inputData.new_playlist_name) {
+        throw new Error('Either select an existing playlist or provide a name for a new one');
+      }
+
       // Step 1: Upload the asset
       const formData = new FormData();
       formData.append('title', bundle.inputData.title);
       formData.append('duration', bundle.inputData.duration || 10);
       formData.append('tags', ZAPIER_TAG);  // Tag the asset
 
-      const fileResponse = await fetch(bundle.inputData.file);
-      if (!fileResponse.ok) {
+      const fileResponse = await z.request({
+        url: bundle.inputData.file,
+        raw: true
+      });
+      if (fileResponse.status >= 400) {
         throw new Error(`Failed to fetch file: ${fileResponse.status}`);
       }
-      const buffer = await fileResponse.buffer();
-      formData.append('file', buffer, 'asset');
 
-      const assetResponse = await fetch('https://api.screenlyapp.com/api/v4/assets/', {
+      formData.append('file', fileResponse.body, 'asset');
+
+      const assetResponse = await z.request({
+        url: 'https://api.screenlyapp.com/api/v4/assets/',
         method: 'POST',
         headers: {
           Authorization: `Token ${bundle.authData.api_key}`
@@ -438,100 +420,65 @@ const completeWorkflow = {
         body: formData
       });
 
-      if (!assetResponse.ok) {
-        const error = await assetResponse.text();
-        throw new Error(`Failed to upload asset: ${error}`);
-      }
-
-      const asset = await assetResponse.json();
+      const asset = handleError(assetResponse, 'Failed to upload asset');
 
       // Step 2: Get or create playlist
       let playlistId = bundle.inputData.playlist_id;
 
-      if (!playlistId && !bundle.inputData.new_playlist_name) {
-        throw new Error('Either select an existing playlist or provide a name for a new one');
-      }
-
       if (!playlistId) {
-        // Create new playlist with Zapier tag
-        const playlistResponse = await fetch('https://api.screenlyapp.com/api/v4/playlists/', {
+        // Create new playlist
+        const playlistResponse = await z.request({
+          url: 'https://api.screenlyapp.com/api/v4/playlists/',
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             Authorization: `Token ${bundle.authData.api_key}`
           },
-          body: JSON.stringify({
+          body: {
             name: bundle.inputData.new_playlist_name,
             tags: [ZAPIER_TAG]
-          })
+          }
         });
 
-        if (!playlistResponse.ok) {
-          const error = await playlistResponse.text();
-          throw new Error(`Failed to create playlist: ${error}`);
-        }
-
-        const playlist = await playlistResponse.json();
+        const playlist = handleError(playlistResponse, 'Failed to create playlist');
         playlistId = playlist.id;
       }
 
       // Step 3: Add asset to playlist
-      const conditions = {};
-      if (bundle.inputData.start_date) {
-        conditions.start_date = bundle.inputData.start_date;
-      }
-      if (bundle.inputData.end_date) {
-        conditions.end_date = bundle.inputData.end_date;
-      }
-
-      const playlistItemPayload = {
-        asset: asset.id,
-        playlist: playlistId
-      };
-
-      if (Object.keys(conditions).length > 0) {
-        playlistItemPayload.conditions = conditions;
-      }
-
-      const playlistItemResponse = await fetch('https://api.screenlyapp.com/api/v4/playlist-items/', {
+      const playlistItemResponse = await z.request({
+        url: 'https://api.screenlyapp.com/api/v4/playlist-items/',
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Token ${bundle.authData.api_key}`
         },
-        body: JSON.stringify(playlistItemPayload)
+        body: {
+          asset: asset.id,
+          playlist: playlistId
+        }
       });
 
-      if (!playlistItemResponse.ok) {
-        const error = await playlistItemResponse.text();
-        throw new Error(`Failed to add asset to playlist: ${error}`);
-      }
+      handleError(playlistItemResponse, 'Failed to add asset to playlist');
 
       // Step 4: Assign playlist to screen
-      const screenResponse = await fetch(`https://api.screenlyapp.com/api/v4/screens/${bundle.inputData.screen_id}/`, {
+      const screenResponse = await z.request({
+        url: `https://api.screenlyapp.com/api/v4/screens/${bundle.inputData.screen_id}/`,
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Token ${bundle.authData.api_key}`
         },
-        body: JSON.stringify({
+        body: {
           playlist: playlistId
-        })
+        }
       });
 
-      if (!screenResponse.ok) {
-        const error = await screenResponse.text();
-        throw new Error(`Failed to assign playlist to screen: ${error}`);
-      }
+      handleError(screenResponse, 'Failed to assign playlist to screen');
 
-      const screen = await screenResponse.json();
-
-      // Return complete workflow result
       return {
         asset: asset,
         playlist_id: playlistId,
-        screen: screen,
-        message: 'Successfully set up digital signage workflow'
+        screen_id: bundle.inputData.screen_id
       };
     }
   }
@@ -542,8 +489,8 @@ const cleanupZapierContent = {
   key: 'cleanup_zapier_content',
   noun: 'Cleanup',
   display: {
-    label: 'Clean Up Zapier Content',
-    description: 'Remove playlists and assets created by Zapier'
+    label: 'Cleanup Zapier Content',
+    description: 'Remove all content created by Zapier'
   },
   operation: {
     inputFields: [
@@ -561,38 +508,33 @@ const cleanupZapierContent = {
       }
 
       // Step 1: Get all Zapier-created assets
-      const assetsResponse = await fetch('https://api.screenlyapp.com/api/v4/assets/', {
+      const assetsResponse = await z.request({
+        url: 'https://api.screenlyapp.com/api/v4/assets/',
         method: 'GET',
         headers: {
           Authorization: `Token ${bundle.authData.api_key}`
         }
       });
 
-      if (!assetsResponse.ok) {
-        throw new Error('Failed to fetch assets');
-      }
-
-      const assets = await assetsResponse.json();
-      const zapierAssets = assets.filter(asset => asset.tags && asset.tags.includes(ZAPIER_TAG));
+      const assets = handleError(assetsResponse, 'Failed to fetch assets')
+        .filter(asset => asset.tags.includes(ZAPIER_TAG));
 
       // Step 2: Get all Zapier-created playlists
-      const playlistsResponse = await fetch('https://api.screenlyapp.com/api/v4/playlists/', {
+      const playlistsResponse = await z.request({
+        url: 'https://api.screenlyapp.com/api/v4/playlists/',
         method: 'GET',
         headers: {
           Authorization: `Token ${bundle.authData.api_key}`
         }
       });
 
-      if (!playlistsResponse.ok) {
-        throw new Error('Failed to fetch playlists');
-      }
+      const playlists = handleError(playlistsResponse, 'Failed to fetch playlists')
+        .filter(playlist => playlist.tags && playlist.tags.includes(ZAPIER_TAG));
 
-      const playlists = await playlistsResponse.json();
-      const zapierPlaylists = playlists.filter(playlist => playlist.tags && playlist.tags.includes(ZAPIER_TAG));
-
-      // Step 3: Remove Zapier playlists
-      for (const playlist of zapierPlaylists) {
-        await fetch(`https://api.screenlyapp.com/api/v4/playlists/${playlist.id}/`, {
+      // Step 3: Delete assets
+      for (const asset of assets) {
+        await z.request({
+          url: `https://api.screenlyapp.com/api/v4/assets/${asset.id}/`,
           method: 'DELETE',
           headers: {
             Authorization: `Token ${bundle.authData.api_key}`
@@ -600,9 +542,10 @@ const cleanupZapierContent = {
         });
       }
 
-      // Step 4: Remove Zapier assets
-      for (const asset of zapierAssets) {
-        await fetch(`https://api.screenlyapp.com/api/v4/assets/${asset.id}/`, {
+      // Step 4: Delete playlists
+      for (const playlist of playlists) {
+        await z.request({
+          url: `https://api.screenlyapp.com/api/v4/playlists/${playlist.id}/`,
           method: 'DELETE',
           headers: {
             Authorization: `Token ${bundle.authData.api_key}`
@@ -611,9 +554,8 @@ const cleanupZapierContent = {
       }
 
       return {
-        playlists_removed: zapierPlaylists.length,
-        assets_removed: zapierAssets.length,
-        message: `Successfully removed ${zapierPlaylists.length} playlists and ${zapierAssets.length} assets created by Zapier`
+        playlists_removed: playlists.length,
+        assets_removed: assets.length
       };
     }
   }
@@ -624,9 +566,9 @@ module.exports = {
   platformVersion: require('zapier-platform-core').version,
   authentication,
   triggers: {
+    [getScreens.key]: getScreens,
     [getPlaylists.key]: getPlaylists,
-    [getAssets.key]: getAssets,
-    [getScreens.key]: getScreens
+    [getAssets.key]: getAssets
   },
   creates: {
     [uploadAsset.key]: uploadAsset,
@@ -634,5 +576,8 @@ module.exports = {
     [assignScreenToPlaylist.key]: assignScreenToPlaylist,
     [completeWorkflow.key]: completeWorkflow,
     [cleanupZapierContent.key]: cleanupZapierContent
-  }
+  },
+  // Export helper functions for testing
+  makeRequest,
+  handleError
 };
