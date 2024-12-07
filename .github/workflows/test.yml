@@ -66,23 +66,30 @@ jobs:
         echo "## Visual Test Results" >> $GITHUB_STEP_SUMMARY
 
         # Show test results using jq
+        echo "### Test Results" >> $GITHUB_STEP_SUMMARY
         echo "| Total | Passed | Failed | Skipped |" >> $GITHUB_STEP_SUMMARY
         echo "|-------|---------|---------|----------|" >> $GITHUB_STEP_SUMMARY
-        jq -r '"| \(.numTotalTests) | \(.numPassedTests) | \(.numFailedTests) | \(.numPendingTests) |"' visual-test-results.json >> $GITHUB_STEP_SUMMARY || {
-          echo "| No test results available | - | - | - |" >> $GITHUB_STEP_SUMMARY
-        }
+        if [ -f "visual-test-results.json" ]; then
+          jq -r '"| \(.numTotalTests) | \(.numPassedTests) | \(.numFailedTests) | \(.numPendingTests) |"' visual-test-results.json >> $GITHUB_STEP_SUMMARY || {
+            echo "| Failed to parse test results | - | - | - |" >> $GITHUB_STEP_SUMMARY
+          }
+        else
+          echo "| No test results file found | - | - | - |" >> $GITHUB_STEP_SUMMARY
+        fi
         echo "" >> $GITHUB_STEP_SUMMARY
 
         # Show screenshots
         echo "### Screenshots" >> $GITHUB_STEP_SUMMARY
         shopt -s nullglob  # Handle case when no files match pattern
         for img in test/__image_snapshots__/*.png; do
-          name=$(basename "$img" -snap.png | sed 's/ci-//')
-          echo "#### $name" >> $GITHUB_STEP_SUMMARY
-          echo "<details><summary>$(basename "$img")</summary>" >> $GITHUB_STEP_SUMMARY
-          echo "<img src=\"data:image/png;base64,$(base64 -w 0 "$img")\" width=\"800\">" >> $GITHUB_STEP_SUMMARY
-          echo "</details>" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ -f "$img" ]; then
+            name=$(basename "$img" -snap.png | sed 's/ci-//')
+            echo "#### $name" >> $GITHUB_STEP_SUMMARY
+            echo "<details><summary>$(basename "$img")</summary>" >> $GITHUB_STEP_SUMMARY
+            echo "<img src=\"data:image/png;base64,$(base64 -w 0 "$img")\" width=\"800\">" >> $GITHUB_STEP_SUMMARY
+            echo "</details>" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+          fi
         done
 
     - name: Upload screenshots
@@ -90,5 +97,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: visual-test-screenshots
-        path: test/__image_snapshots__/*.png
+        path: |
+          test/__image_snapshots__/*.png
+          visual-test-results.json
         if-no-files-found: warn
