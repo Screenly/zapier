@@ -72,6 +72,16 @@ jobs:
           jq -r '"| \(.numTotalTests) | \(.numPassedTests) | \(.numFailedTests) | \(.numPendingTests) |"' visual-test-results.json >> $GITHUB_STEP_SUMMARY
         fi
 
+        # Show screenshots in summary
+        echo "## Screenshots" >> $GITHUB_STEP_SUMMARY
+        for img in __image_snapshots__/*.png; do
+          name=$(basename "$img" | sed 's/ci-//' | sed 's/-1.png//')
+          echo "### $name" >> $GITHUB_STEP_SUMMARY
+          echo "<details><summary>View Screenshot</summary>" >> $GITHUB_STEP_SUMMARY
+          echo "<img src=\"data:image/png;base64,$(base64 -w 0 "$img")\" width=\"800\">" >> $GITHUB_STEP_SUMMARY
+          echo "</details>" >> $GITHUB_STEP_SUMMARY
+        done
+
         # Create a flat directory for artifacts
         mkdir -p artifacts
         cp __image_snapshots__/*.png artifacts/
