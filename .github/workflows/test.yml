@@ -54,11 +54,12 @@ jobs:
         path: coverage/
     - name: Run visual tests
       run: |
-        # Create snapshot directory
+        # Create snapshot directories
         mkdir -p __image_snapshots__
+        mkdir -p __image_snapshots__/__diff_output__
 
         # Run tests with update flag to generate snapshots and JSON output
-        xvfb-run --auto-servernum --server-args="-screen 0 1280x800x24" npm run test:visual:ci -- -u --json --outputFile=visual-test-results.json
+        ARTIFACTS_DIR="$(pwd)/__image_snapshots__" xvfb-run --auto-servernum --server-args="-screen 0 1280x800x24" npm run test:visual:ci -- -u --json --outputFile=visual-test-results.json
 
     - name: Generate visual test summary
       if: always()
@@ -77,25 +78,38 @@ jobs:
         embed_image() {
           local img="$1"
           if [ -f "$img" ]; then
+            echo "Found image: $img" >> $GITHUB_STEP_SUMMARY
+            echo "<details><summary>$(basename "$img")</summary>" >> $GITHUB_STEP_SUMMARY
             echo "<img src=\"data:image/png;base64,$(base64 -w 0 "$img")\" width=\"800\">" >> $GITHUB_STEP_SUMMARY
+            echo "</details>" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "Image not found: $img" >> $GITHUB_STEP_SUMMARY
           fi
         }
 
+        # Debug info
+        echo "### Debug Info" >> $GITHUB_STEP_SUMMARY
+        echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+        ls -la __image_snapshots__/ >> $GITHUB_STEP_SUMMARY
+        echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+
         # Show each screenshot
+        echo "### Screenshots" >> $GITHUB_STEP_SUMMARY
         for img in __image_snapshots__/*.png; do
-          if [ -f "$img" ]; then
+          if [ -e "$img" ]; then
             name=$(basename "$img" -snap.png | sed 's/ci-//')
-            echo "### $name" >> $GITHUB_STEP_SUMMARY
+            echo "#### $name" >> $GITHUB_STEP_SUMMARY
             embed_image "$img"
           fi
         done
 
         # Show any diffs
-        if [ -d "__image_snapshots__/__diff_output__" ]; then
+        if [ -d "__image_snapshots__/__diff_output__" ] && [ "$(ls -A __image_snapshots__/__diff_output__)" ]; then
           echo "### ⚠️ Visual Differences" >> $GITHUB_STEP_SUMMARY
           for diff in __image_snapshots__/__diff_output__/*.png; do
-            if [ -f "$diff" ]; then
+            if [ -e "$diff" ]; then
               name=$(basename "$diff" .png | sed 's/ci-//' | sed 's/-diff//')
               echo "#### $name (diff)" >> $GITHUB_STEP_SUMMARY
               embed_image "$diff"
@@ -111,3 +125,4 @@ jobs:
         path: |
           __image_snapshots__/*.png
           __image_snapshots__/__diff_output__/*.png
+        if-no-files-found: warn
