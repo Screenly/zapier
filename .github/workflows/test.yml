@@ -26,8 +26,8 @@ jobs:
         npm ci
     - name: Run tests with coverage
       run: |
-        # Run tests with coverage and capture results
-        npm test 2>&1 | tee test-output.log
+        # Run tests with coverage and capture results in JSON format
+        npm test -- --coverage-reporters=lcov --coverage-reporters=json-summary --json --outputFile=test-results.json
 
         # Extract coverage from JSON and format for summary
         echo "# Test Results (Node ${{ matrix.node-version }})" >> $GITHUB_STEP_SUMMARY
@@ -35,32 +35,43 @@ jobs:
         echo "| Type | Coverage | Details |" >> $GITHUB_STEP_SUMMARY
         echo "|------|----------|----------|" >> $GITHUB_STEP_SUMMARY
 
-        # Use jq to parse the JSON and format the table
+        # Use jq to parse the coverage JSON
         jq -r '.total |
-          "| Statements | \(.statements.pct)% | \(.statements.covered)/\(.statements.total) |\n| Branches | \(.branches.pct)% | \(.branches.covered)/\(.branches.total) |\n| Functions | \(.functions.pct)% | \(.functions.covered)/\(.functions.total) |\n| Lines | \(.lines.pct)% | \(.lines.covered)/\(.lines.total) |"' coverage/coverage-summary.json >> $GITHUB_STEP_SUMMARY
+          "| Statements | \(.statements.pct)% | \(.statements.covered)/\(.statements.total) |\n| Branches | \(.branches.pct)% | \(.branches.covered)/\(.branches.total) |\n| Functions | \(.functions.pct)% | \(.functions.covered)/\(.functions.total) |\n| Lines | \(.lines.pct)% | \(.lines.covered)/\(.lines.total) |"' coverage/coverage-summary.json >> $GITHUB_STEP_SUMMARY || {
+            echo "| Coverage data not available | - | - |" >> $GITHUB_STEP_SUMMARY
+          }
 
-        # Add test results summary
-        echo "" >> $GITHUB_STEP_SUMMARY
+        # Add test results using jq
         echo "## Test Results" >> $GITHUB_STEP_SUMMARY
-        echo "| Total | Passed | Failed |" >> $GITHUB_STEP_SUMMARY
-        echo "|-------|--------|---------|" >> $GITHUB_STEP_SUMMARY
+        echo "| Total | Passed | Failed | Skipped |" >> $GITHUB_STEP_SUMMARY
+        echo "|-------|---------|---------|----------|" >> $GITHUB_STEP_SUMMARY
+        jq -r '"| \(.numTotalTests) | \(.numPassedTests) | \(.numFailedTests) | \(.numPendingTests) |"' test-results.json >> $GITHUB_STEP_SUMMARY
 
-        # Parse test results from Jest output
-        total=$(grep -o 'Tests:.*' test-output.log | sed -E 's/Tests: +([0-9]+).*/\1/')
-        passed=$(grep -o 'Tests:.*' test-output.log | sed -E 's/Tests: +[0-9]+ passed, ([0-9]+).*/\1/')
-        failed=$(grep -o 'Tests:.*' test-output.log | sed -E 's/Tests: +[0-9]+ passed, [0-9]+ failed, ([0-9]+).*/\1/' || echo "0")
-        echo "| $total | $passed | $failed |" >> $GITHUB_STEP_SUMMARY
     - name: Upload coverage report
       uses: actions/upload-artifact@v4
       with:
         name: coverage-report
         path: coverage/
     - name: Run visual tests
-      run: xvfb-run --auto-servernum --server-args="-screen 0 1280x800x24" npm run test:visual:ci -- -u
+      run: |
+        # Create snapshot directory
+        mkdir -p __image_snapshots__
+
+        # Run tests with update flag to generate snapshots and JSON output
+        xvfb-run --auto-servernum --server-args="-screen 0 1280x800x24" npm run test:visual:ci -- -u --json --outputFile=visual-test-results.json
+
     - name: Generate visual test summary
       if: always()
       run: |
         echo "## Visual Test Results" >> $GITHUB_STEP_SUMMARY
+
+        # Show test results using jq
+        echo "| Total | Passed | Failed | Skipped |" >> $GITHUB_STEP_SUMMARY
+        echo "|-------|---------|---------|----------|" >> $GITHUB_STEP_SUMMARY
+        jq -r '"| \(.numTotalTests) | \(.numPassedTests) | \(.numFailedTests) | \(.numPendingTests) |"' visual-test-results.json >> $GITHUB_STEP_SUMMARY || {
+          echo "| No test results available | - | - | - |" >> $GITHUB_STEP_SUMMARY
+        }
+        echo "" >> $GITHUB_STEP_SUMMARY
 
         # Function to embed image
         embed_image() {
@@ -91,6 +102,7 @@ jobs:
             fi
           done
         fi
+
     - name: Upload screenshots
       if: always()
       uses: actions/upload-artifact@v4
