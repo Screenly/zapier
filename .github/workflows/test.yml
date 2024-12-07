@@ -63,8 +63,8 @@ jobs:
       run: |
         mkdir -p test/__image_snapshots__
 
-        # Run tests with proper browser configuration
-        CHROME_PATH="$(which chrome)" xvfb-run --auto-servernum --server-args="-screen 0 1280x800x24" npm run test:visual:ci -- --json --outputFile=visual-test-results.json 2>&1 | tee test-output.log
+        # Run tests with proper browser configuration and update snapshots
+        CHROME_PATH="$(which chrome)" xvfb-run --auto-servernum --server-args="-screen 0 1280x800x24" npm run test:visual:ci -- -u --json --outputFile=visual-test-results.json 2>&1 | tee test-output.log
 
         # Show test results if available
         if [ -f "visual-test-results.json" ]; then
