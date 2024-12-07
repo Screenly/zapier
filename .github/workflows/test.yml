@@ -61,25 +61,15 @@ jobs:
 
     - name: Run visual tests
       run: |
-        mkdir -p test/__image_snapshots__
+        mkdir -p __image_snapshots__
+        CHROME_PATH="$(which chrome)" xvfb-run --auto-servernum --server-args="-screen 0 1280x800x24" npm run test:visual:ci -- -u --json --outputFile=visual-test-results.json
 
-        # Run tests with proper browser configuration and update snapshots
-        CHROME_PATH="$(which chrome)" xvfb-run --auto-servernum --server-args="-screen 0 1280x800x24" npm run test:visual:ci -- -u --json --outputFile=visual-test-results.json 2>&1 | tee test-output.log
-
-        # Debug - show what files exist
-        echo "=== Files in test/__image_snapshots__ ==="
-        ls -la test/__image_snapshots__/
-        echo "=== All PNG files in workspace ==="
-        find . -name "*.png" -ls
-
-        # Show test results if available
+        # Show test results
         if [ -f "visual-test-results.json" ]; then
           echo "## Visual Test Results" >> $GITHUB_STEP_SUMMARY
           echo "| Total | Passed | Failed | Skipped |" >> $GITHUB_STEP_SUMMARY
           echo "|-------|---------|---------|----------|" >> $GITHUB_STEP_SUMMARY
           jq -r '"| \(.numTotalTests) | \(.numPassedTests) | \(.numFailedTests) | \(.numPendingTests) |"' visual-test-results.json >> $GITHUB_STEP_SUMMARY
-        else
-          echo "No test results file was generated" >> $GITHUB_STEP_SUMMARY
         fi
 
     - name: Upload artifacts
@@ -88,5 +78,5 @@ jobs:
       with:
         name: screenshots
         path: |
-          ./test/__image_snapshots__
+          ./__image_snapshots__
           ./visual-test-results.json
