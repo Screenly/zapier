@@ -85,7 +85,8 @@ jobs:
               echo "<details>"
               echo "<summary>View Screenshot</summary>"
               echo ""
-              echo "<img src=\"data:image/png;base64,$(base64 -w 0 "$img")\" width=\"800\">"
+              encoded=$(cat "$img" | base64)
+              echo "<img src=\"data:image/png;base64,${encoded}\" width=\"800\">"
               echo ""
               echo "</details>"
               echo ""
