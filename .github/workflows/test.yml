@@ -26,8 +26,8 @@ jobs:
         npm ci
     - name: Run tests with coverage
       run: |
-        # Run tests and capture JSON output
-        npm test -- --json --coverage > test-results.json || true
+        # Run tests with coverage and capture results
+        npm test 2>&1 | tee test-output.log
 
         # Extract coverage from JSON and format for summary
         echo "# Test Results (Node ${{ matrix.node-version }})" >> $GITHUB_STEP_SUMMARY
@@ -36,13 +36,20 @@ jobs:
         echo "|------|----------|----------|" >> $GITHUB_STEP_SUMMARY
 
         # Use jq to parse the JSON and format the table
-        jq -r '.coverageMap["total"] |
-          "| Statements | \(.statements.pct)% | \(.statements.covered)/\(.statements.total) |\n| Branches | \(.branches.pct)% | \(.branches.covered)/\(.branches.total) |\n| Functions | \(.functions.pct)% | \(.functions.covered)/\(.functions.total) |\n| Lines | \(.lines.pct)% | \(.lines.covered)/\(.lines.total) |"' coverage/coverage-final.json >> $GITHUB_STEP_SUMMARY
+        jq -r '.total |
+          "| Statements | \(.statements.pct)% | \(.statements.covered)/\(.statements.total) |\n| Branches | \(.branches.pct)% | \(.branches.covered)/\(.branches.total) |\n| Functions | \(.functions.pct)% | \(.functions.covered)/\(.functions.total) |\n| Lines | \(.lines.pct)% | \(.lines.covered)/\(.lines.total) |"' coverage/coverage-summary.json >> $GITHUB_STEP_SUMMARY
 
         # Add test results summary
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "## Test Results" >> $GITHUB_STEP_SUMMARY
-        jq -r '"| Total | Passed | Failed |\n|-------|--------|--------|\n| \(.numTotalTests) | \(.numPassedTests) | \(.numFailedTests) |"' test-results.json >> $GITHUB_STEP_SUMMARY
+        echo "| Total | Passed | Failed |" >> $GITHUB_STEP_SUMMARY
+        echo "|-------|--------|---------|" >> $GITHUB_STEP_SUMMARY
+
+        # Parse test results from Jest output
+        total=$(grep -o 'Tests:.*' test-output.log | sed -E 's/Tests: +([0-9]+).*/\1/')
+        passed=$(grep -o 'Tests:.*' test-output.log | sed -E 's/Tests: +[0-9]+ passed, ([0-9]+).*/\1/')
+        failed=$(grep -o 'Tests:.*' test-output.log | sed -E 's/Tests: +[0-9]+ passed, [0-9]+ failed, ([0-9]+).*/\1/' || echo "0")
+        echo "| $total | $passed | $failed |" >> $GITHUB_STEP_SUMMARY
     - name: Upload coverage report
       uses: actions/upload-artifact@v4
       with:
@@ -50,29 +57,45 @@ jobs:
         path: coverage/
     - name: Run visual tests
       run: xvfb-run --auto-servernum --server-args="-screen 0 1280x800x24" npm run test:visual:ci -- -u
-    - name: Upload visual test artifacts
-      if: always()
-      id: upload-artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: visual-test-artifacts
-        path: |
-          __image_snapshots__
-          __image_snapshots__/__diff_output__
     - name: Generate visual test summary
       if: always()
       run: |
         echo "## Visual Test Results" >> $GITHUB_STEP_SUMMARY
-        echo "### Test Summary" >> $GITHUB_STEP_SUMMARY
-        echo "| Test | Status |" >> $GITHUB_STEP_SUMMARY
-        echo "|------|--------|" >> $GITHUB_STEP_SUMMARY
-        echo "| Upload Asset Form | ✅ |" >> $GITHUB_STEP_SUMMARY
-        echo "| Complete Workflow Form | ✅ |" >> $GITHUB_STEP_SUMMARY
-        echo "| Cleanup Confirmation Form | ✅ |" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "Screenshots are available in the [visual-test-artifacts](../artifacts/visual-test-artifacts)" >> $GITHUB_STEP_SUMMARY
 
+        # Function to embed image
+        embed_image() {
+          local img="$1"
+          if [ -f "$img" ]; then
+            echo "<img src=\"data:image/png;base64,$(base64 -w 0 "$img")\" width=\"800\">" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+          fi
+        }
+
+        # Show each screenshot
+        for img in __image_snapshots__/*.png; do
+          if [ -f "$img" ]; then
+            name=$(basename "$img" -snap.png | sed 's/ci-//')
+            echo "### $name" >> $GITHUB_STEP_SUMMARY
+            embed_image "$img"
+          fi
+        done
+
+        # Show any diffs
         if [ -d "__image_snapshots__/__diff_output__" ]; then
-          echo "### ⚠️ Visual Differences Detected" >> $GITHUB_STEP_SUMMARY
-          echo "Check the artifacts for diff images." >> $GITHUB_STEP_SUMMARY
+          echo "### ⚠️ Visual Differences" >> $GITHUB_STEP_SUMMARY
+          for diff in __image_snapshots__/__diff_output__/*.png; do
+            if [ -f "$diff" ]; then
+              name=$(basename "$diff" .png | sed 's/ci-//' | sed 's/-diff//')
+              echo "#### $name (diff)" >> $GITHUB_STEP_SUMMARY
+              embed_image "$diff"
+            fi
+          done
         fi
+    - name: Upload screenshots
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: visual-test-screenshots
+        path: |
+          __image_snapshots__/*.png
+          __image_snapshots__/__diff_output__/*.png
