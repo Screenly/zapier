@@ -22,7 +22,13 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y libgbm-dev jq
+        sudo apt-get install -y libgbm-dev jq xvfb fonts-liberation libasound2 libatk-bridge2.0-0 libatk1.0-0 libatspi2.0-0 libcups2 libdbus-1-3 libdrm2 libgbm1 libgtk-3-0 libnspr4 libnss3 libxcomposite1 libxdamage1 libxfixes3 libxkbcommon0 libxrandr2 xfonts-cyrillic xfonts-100dpi xfonts-75dpi xfonts-base xfonts-scalable
+
+        # Install Chrome
+        wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+        sudo dpkg -i google-chrome-stable_current_amd64.deb
+        sudo apt-get install -f
+
         npm ci
     - name: Run tests with coverage
       run: |
@@ -55,28 +61,33 @@ jobs:
     - name: Run visual tests
       run: |
         mkdir -p test/__image_snapshots__
-        CI=1 xvfb-run --auto-servernum --server-args="-screen 0 1280x800x24" npm run test:visual:ci -- --json --outputFile=visual-test-results.json
 
-        # Show test results
-        echo "## Visual Test Results" >> $GITHUB_STEP_SUMMARY
-        echo "| Total | Passed | Failed | Skipped |" >> $GITHUB_STEP_SUMMARY
-        echo "|-------|---------|---------|----------|" >> $GITHUB_STEP_SUMMARY
-        jq -r '"| \(.numTotalTests) | \(.numPassedTests) | \(.numFailedTests) | \(.numPendingTests) |"' visual-test-results.json >> $GITHUB_STEP_SUMMARY
+        # Run tests with proper Puppeteer configuration
+        PUPPETEER_EXECUTABLE_PATH=/usr/bin/google-chrome CI=1 xvfb-run --auto-servernum --server-args="-screen 0 1280x800x24" npm run test:visual:ci -- --json --outputFile=visual-test-results.json 2>&1 | tee test-output.log
 
-        # Debug - show what files exist
-        echo "Contents of test/__image_snapshots__:"
+        # Show the full test output for debugging
+        echo "=== Full test output ==="
+        cat test-output.log
+
+        # Show test results if available
+        if [ -f "visual-test-results.json" ]; then
+          echo "## Visual Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "| Total | Passed | Failed | Skipped |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|---------|---------|----------|" >> $GITHUB_STEP_SUMMARY
+          jq -r '"| \(.numTotalTests) | \(.numPassedTests) | \(.numFailedTests) | \(.numPendingTests) |"' visual-test-results.json >> $GITHUB_STEP_SUMMARY
+        else
+          echo "No test results file was generated" >> $GITHUB_STEP_SUMMARY
+        fi
+
+        # Show directory contents
+        echo "=== Directory contents ==="
         ls -la test/__image_snapshots__/
-
-    - name: Upload screenshots
-      if: always()
-      run: |
-        echo "Looking for PNG files in workspace:"
-        find $GITHUB_WORKSPACE -type f -name "*.png" -ls
 
     - name: Upload artifacts
       if: always()
       uses: actions/upload-artifact@v4
       with:
         name: screenshots
-        path: "**/*.png"
-        if-no-files-found: warn
+        path: |
+          test/__image_snapshots__/*.png
+          visual-test-results.json
