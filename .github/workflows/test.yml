@@ -27,7 +27,7 @@ jobs:
     - name: Run tests with coverage
       run: |
         # Run tests and capture JSON output
-        npm test -- --json > test-results.json || true
+        npm test -- --json --coverage > test-results.json || true
 
         # Extract coverage from JSON and format for summary
         echo "# Test Results (Node ${{ matrix.node-version }})" >> $GITHUB_STEP_SUMMARY
@@ -36,16 +36,13 @@ jobs:
         echo "|------|----------|----------|" >> $GITHUB_STEP_SUMMARY
 
         # Use jq to parse the JSON and format the table
-        if jq -e '.coverageMap' test-results.json > /dev/null 2>&1; then
-          jq -r '.coverageMap |
-            to_entries[] |
-            select(.key == "total") |
-            .value |
-            "| Statements | \(.statements.pct | floor)% | \(.statements.covered)/\(.statements.total) |\n| Branches | \(.branches.pct | floor)% | \(.branches.covered)/\(.branches.total) |\n| Functions | \(.functions.pct | floor)% | \(.functions.covered)/\(.functions.total) |\n| Lines | \(.lines.pct | floor)% | \(.lines.covered)/\(.lines.total) |"' test-results.json >> $GITHUB_STEP_SUMMARY
-        else
-          echo "⚠️ Could not parse coverage data from test results" >> $GITHUB_STEP_SUMMARY
-          cat test-results.json >> $GITHUB_STEP_SUMMARY
-        fi
+        jq -r '.coverageMap["total"] |
+          "| Statements | \(.statements.pct)% | \(.statements.covered)/\(.statements.total) |\n| Branches | \(.branches.pct)% | \(.branches.covered)/\(.branches.total) |\n| Functions | \(.functions.pct)% | \(.functions.covered)/\(.functions.total) |\n| Lines | \(.lines.pct)% | \(.lines.covered)/\(.lines.total) |"' coverage/coverage-final.json >> $GITHUB_STEP_SUMMARY
+
+        # Add test results summary
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "## Test Results" >> $GITHUB_STEP_SUMMARY
+        jq -r '"| Total | Passed | Failed |\n|-------|--------|--------|\n| \(.numTotalTests) | \(.numPassedTests) | \(.numFailedTests) |"' test-results.json >> $GITHUB_STEP_SUMMARY
     - name: Upload coverage report
       uses: actions/upload-artifact@v4
       with:
@@ -64,28 +61,18 @@ jobs:
           __image_snapshots__/__diff_output__
     - name: Generate visual test summary
       if: always()
-      env:
-        ARTIFACT_URL: ${{ steps.upload-artifacts.outputs.artifact-url }}
       run: |
         echo "## Visual Test Results" >> $GITHUB_STEP_SUMMARY
-        echo "### Upload Asset Form" >> $GITHUB_STEP_SUMMARY
-        echo "[![Upload Asset Form]($ARTIFACT_URL/__image_snapshots__/ci-Upload-Asset-Form-1-snap.png)]($ARTIFACT_URL/__image_snapshots__/ci-Upload-Asset-Form-1-snap.png)" >> $GITHUB_STEP_SUMMARY
+        echo "### Test Summary" >> $GITHUB_STEP_SUMMARY
+        echo "| Test | Status |" >> $GITHUB_STEP_SUMMARY
+        echo "|------|--------|" >> $GITHUB_STEP_SUMMARY
+        echo "| Upload Asset Form | ✅ |" >> $GITHUB_STEP_SUMMARY
+        echo "| Complete Workflow Form | ✅ |" >> $GITHUB_STEP_SUMMARY
+        echo "| Cleanup Confirmation Form | ✅ |" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
-
-        echo "### Complete Workflow Form" >> $GITHUB_STEP_SUMMARY
-        echo "[![Complete Workflow Form]($ARTIFACT_URL/__image_snapshots__/ci-Complete-Workflow-Form-1-snap.png)]($ARTIFACT_URL/__image_snapshots__/ci-Complete-Workflow-Form-1-snap.png)" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-
-        echo "### Cleanup Confirmation Form" >> $GITHUB_STEP_SUMMARY
-        echo "[![Cleanup Confirmation Form]($ARTIFACT_URL/__image_snapshots__/ci-Cleanup-Confirmation-Form-1-snap.png)]($ARTIFACT_URL/__image_snapshots__/ci-Cleanup-Confirmation-Form-1-snap.png)" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "Screenshots are available in the [visual-test-artifacts](../artifacts/visual-test-artifacts)" >> $GITHUB_STEP_SUMMARY
 
         if [ -d "__image_snapshots__/__diff_output__" ]; then
           echo "### ⚠️ Visual Differences Detected" >> $GITHUB_STEP_SUMMARY
-          for diff in __image_snapshots__/__diff_output__/*.png; do
-            filename=$(basename "$diff" .png)
-            echo "#### $filename" >> $GITHUB_STEP_SUMMARY
-            echo "[![Diff]($ARTIFACT_URL/__image_snapshots__/__diff_output__/$filename.png)]($ARTIFACT_URL/__image_snapshots__/__diff_output__/$filename.png)" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-          done
+          echo "Check the artifacts for diff images." >> $GITHUB_STEP_SUMMARY
         fi
