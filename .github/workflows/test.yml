@@ -66,6 +66,12 @@ jobs:
         # Run tests with proper browser configuration and update snapshots
         CHROME_PATH="$(which chrome)" xvfb-run --auto-servernum --server-args="-screen 0 1280x800x24" npm run test:visual:ci -- -u --json --outputFile=visual-test-results.json 2>&1 | tee test-output.log
 
+        # Debug - show what files exist
+        echo "=== Files in test/__image_snapshots__ ==="
+        ls -la test/__image_snapshots__/
+        echo "=== All PNG files in workspace ==="
+        find . -name "*.png" -ls
+
         # Show test results if available
         if [ -f "visual-test-results.json" ]; then
           echo "## Visual Test Results" >> $GITHUB_STEP_SUMMARY
@@ -82,5 +88,5 @@ jobs:
       with:
         name: screenshots
         path: |
-          test/__image_snapshots__/*.png
-          visual-test-results.json
+          ./test/__image_snapshots__
+          ./visual-test-results.json
