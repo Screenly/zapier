@@ -1,5 +1,6 @@
 'use strict';
 
+require('./setup.visual');
 const puppeteer = require('puppeteer');
 const nock = require('nock');
 
