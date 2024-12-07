@@ -52,7 +52,7 @@ jobs:
     - run: npm ci
     - name: Run visual tests
       run: |
-        xvfb-run --auto-servernum --server-args="-screen 0 1280x800x24" npm run test:visual:ci
+        xvfb-run --auto-servernum --server-args="-screen 0 1280x800x24" npm run test:visual:ci -- -u
         echo "# Visual Test Results" >> $GITHUB_STEP_SUMMARY
         echo "## Screenshots" >> $GITHUB_STEP_SUMMARY
         echo "The following forms were tested:" >> $GITHUB_STEP_SUMMARY
