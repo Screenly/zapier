@@ -29,9 +29,16 @@ jobs:
         npm test
         echo "# Test Results (Node ${{ matrix.node-version }})" >> $GITHUB_STEP_SUMMARY
         echo "## Coverage" >> $GITHUB_STEP_SUMMARY
-        echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-        cat coverage/lcov-report/index.html | grep -A 4 "<div class='fl pad1y space-right2'>" | grep -v "<div" | sed 's/<span class="strong">//g' | sed 's/<\/span>//g' | sed 's/^[ \t]*//' >> $GITHUB_STEP_SUMMARY
-        echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+        echo "| Type | Coverage | Details |" >> $GITHUB_STEP_SUMMARY
+        echo "|------|----------|----------|" >> $GITHUB_STEP_SUMMARY
+        statements=$(cat coverage/lcov-report/index.html | grep -A 1 "statements" | tail -n 1 | sed -E 's/.*>([0-9.]+)%.+([0-9]+\/[0-9]+).*/\1 | \2/')
+        branches=$(cat coverage/lcov-report/index.html | grep -A 1 "branches" | tail -n 1 | sed -E 's/.*>([0-9.]+)%.+([0-9]+\/[0-9]+).*/\1 | \2/')
+        functions=$(cat coverage/lcov-report/index.html | grep -A 1 "functions" | tail -n 1 | sed -E 's/.*>([0-9.]+)%.+([0-9]+\/[0-9]+).*/\1 | \2/')
+        lines=$(cat coverage/lcov-report/index.html | grep -A 1 "lines" | tail -n 1 | sed -E 's/.*>([0-9.]+)%.+([0-9]+\/[0-9]+).*/\1 | \2/')
+        echo "| Statements | $statements |" >> $GITHUB_STEP_SUMMARY
+        echo "| Branches | $branches |" >> $GITHUB_STEP_SUMMARY
+        echo "| Functions | $functions |" >> $GITHUB_STEP_SUMMARY
+        echo "| Lines | $lines |" >> $GITHUB_STEP_SUMMARY
     - name: Upload coverage report
       uses: actions/upload-artifact@v4
       with:
@@ -39,23 +46,6 @@ jobs:
         path: coverage/
     - name: Run visual tests
       run: xvfb-run --auto-servernum --server-args="-screen 0 1280x800x24" npm run test:visual:ci -- -u
-    - name: Generate visual test summary
-      if: always()
-      run: |
-        echo "## Visual Test Results" >> $GITHUB_STEP_SUMMARY
-        echo "### Upload Asset Form" >> $GITHUB_STEP_SUMMARY
-        echo "![Upload Asset Form](__image_snapshots__/ci-Upload-Asset-Form-1-snap.png)" >> $GITHUB_STEP_SUMMARY
-        echo "### Complete Workflow Form" >> $GITHUB_STEP_SUMMARY
-        echo "![Complete Workflow Form](__image_snapshots__/ci-Complete-Workflow-Form-1-snap.png)" >> $GITHUB_STEP_SUMMARY
-        echo "### Cleanup Confirmation Form" >> $GITHUB_STEP_SUMMARY
-        echo "![Cleanup Confirmation Form](__image_snapshots__/ci-Cleanup-Confirmation-Form-1-snap.png)" >> $GITHUB_STEP_SUMMARY
-        if [ -d "__image_snapshots__/__diff_output__" ]; then
-          echo "### Visual Differences Detected" >> $GITHUB_STEP_SUMMARY
-          for diff in __image_snapshots__/__diff_output__/*.png; do
-            echo "#### $(basename "$diff" .png)" >> $GITHUB_STEP_SUMMARY
-            echo "![Diff]($diff)" >> $GITHUB_STEP_SUMMARY
-          done
-        fi
     - name: Upload visual test artifacts
       if: always()
       uses: actions/upload-artifact@v4
@@ -64,3 +54,17 @@ jobs:
         path: |
           __image_snapshots__
           __image_snapshots__/__diff_output__
+    - name: Generate visual test summary
+      if: always()
+      run: |
+        echo "## Visual Test Results" >> $GITHUB_STEP_SUMMARY
+        echo "The following forms were tested:" >> $GITHUB_STEP_SUMMARY
+        echo "- Upload Asset Form" >> $GITHUB_STEP_SUMMARY
+        echo "- Complete Workflow Form" >> $GITHUB_STEP_SUMMARY
+        echo "- Cleanup Confirmation Form" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "Screenshots are available in the artifacts." >> $GITHUB_STEP_SUMMARY
+        if [ -d "__image_snapshots__/__diff_output__" ]; then
+          echo "### ⚠️ Visual Differences Detected" >> $GITHUB_STEP_SUMMARY
+          echo "Check the artifacts for diff images." >> $GITHUB_STEP_SUMMARY
+        fi
