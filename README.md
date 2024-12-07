@@ -1,277 +1,153 @@
 # Screenly Zapier Integration
 
-[![Test](https://github.com/screenly/zapier/actions/workflows/test.yml/badge.svg?branch=master)](https://github.com/screenly/zapier/actions/workflows/test.yml)
+[![Test](
+  https://github.com/screenly/zapier/actions/workflows/test.yml/badge.svg?branch=master
+)](
+  https://github.com/screenly/zapier/actions/workflows/test.yml
+)
 
-A Zapier integration for automating Screenly operations.
+A Zapier integration for automating Screenly digital signage operations. Connect your
+Screenly displays with 5000+ apps.
 
-## Features
+## Quick Start
 
-* Upload assets to your Screenly account
-* Add assets to playlists with optional scheduling
-* Assign screens to playlists
-* Dynamic dropdowns for playlists, assets, and screens
-* Automatic cleanup of Zapier-created content
+1. **Install the Integration**
 
-## Prerequisites
+   * Go to [Zapier's Screenly Integration](
+     https://zapier.com/apps/screenly/integrations
+     ) page
+   * Click "Connect Screenly"
+   * When prompted, enter your Screenly API key from
+     [Screenly Settings](https://app.screenlyapp.com/settings/api-keys)
 
-* Node.js 20.x
-* npm
-* A Screenly account with API access
+2. **Create Your First Zap**
 
-## Installation
+   * Click "Make a Zap"
+   * Choose your trigger app (e.g., Dropbox, SharePoint, Google Drive)
+   * Choose Screenly as your action app
+   * Select one of these actions:
+     * Upload Asset - Add new content to your Screenly library
+     * Add to Playlist - Add content to a specific playlist
+     * Complete Workflow - Upload, add to playlist, and assign to screens
 
-1. Install dependencies:
+3. **Example: Auto-Upload from Dropbox**
 
-```bash
-npm install
-```
-
-2. Configure your Screenly API key:
-    * Get your API key from [Screenly Settings](https://app.screenlyapp.com/settings/api-keys)
-    * When setting up the Zapier integration, you'll be prompted to enter this API key
-
-## Development
-
-### Available Scripts
-
-* `npm test` - Run unit tests with coverage
-* `npm run test:watch` - Run tests in watch mode
-* `npm run lint` - Run ESLint
-* `npm run format` - Format code with Prettier
-* `npm run clean` - Clean up generated files
-* `npm run prepare` - Install git hooks (runs automatically after npm install)
-
-Visual tests are only run in CI environment:
-
-* `npm run test:visual` - Displays information about visual tests
-* `npm run test:visual:ci` - Runs visual tests (CI only)
-
-### Code Quality
-
-The project uses several tools to ensure code quality:
-
-* **ESLint** - For code linting
-* **Prettier** - For code formatting
-* **Jest** - For testing
-* **Husky** - For git hooks
-* **lint-staged** - For running checks on staged files
-
-These run automatically on commit, but you can also run them manually:
-
-```bash
-npm run lint    # Check code style
-npm run format  # Fix code formatting
-```
-
-### Git Hooks
-
-Pre-commit hooks are set up to:
-
-* Lint JavaScript files
-* Format code with Prettier
-* Run tests
-
-### Visual Testing
-
-Visual tests are automatically run in CI and generate screenshots of:
-
-* Upload Asset Form
-* Complete Workflow Form
-* Cleanup Confirmation Form
-
-These tests are skipped locally to avoid environment-specific issues.
-
-## SharePoint Integration Guide
-
-### File Storage Setup
-
-#### Document Libraries
-
-1. **Digital Signage Root Library**
-    * Create a dedicated SharePoint document library for digital signage content
-    * Example structure: `Digital-Signage-Content`
-
-2. **Playlist-Specific Libraries**
-    * Separate libraries for different content types
-    * Examples:
-        * `[Zapier] Announcements`
-        * `[Zapier] Marketing`
-        * `[Zapier] Events`
-        * `[Zapier] Emergency`
-
-3. **Location-Based Libraries**
-    * Organize by physical location
-    * Examples:
-        * `[Zapier] HeadOffice`
-        * `[Zapier] Branches`
-        * `[Zapier] RetailStores`
-
-### SharePoint Column Configuration
-
-1. **Required Columns**
-    * `Duration` (Number) - Asset display duration in seconds
-    * `TargetScreen` (Choice) - Screen identifier
-    * `StartDate` (DateTime) - When to start displaying
-    * `EndDate` (DateTime) - When to stop displaying
-
-2. **Optional Columns**
-    * `ContentType` (Choice) - Image, Video, URL
-    * `Priority` (Number) - Display priority
-    * `Department` (Choice) - Content owner
-    * `Location` (Choice) - Target location
-
-### Zap Templates
-
-1. **Basic File Upload**
-
-```yaml
-Trigger: SharePoint - New file in Digital-Signage-Content
-Action: Screenly - Upload Asset
-```
-
-2. **Scheduled Content**
-
-```yaml
-Trigger: SharePoint - New file with metadata
-Action 1: Screenly - Upload Asset
-Action 2: Screenly - Add to Playlist (using SharePoint columns)
-```
-
-3. **Location-Based Distribution**
-
-```yaml
-Trigger: SharePoint - New file in location folder
-Filter: Location column matches target
-Action: Screenly - Complete Workflow
-```
-
-4. **Emergency Broadcast**
-
-```yaml
-Trigger: SharePoint - New file in [Zapier] Emergency
-Action: Screenly - Complete Workflow (high priority)
-```
-
-### Best Practices for SharePoint Storage
-
-1. **File Organization**
-    * Use consistent folder structures
-    * Implement clear naming conventions
-    * Set up content types for different media
-
-2. **Permission Management**
-    * Create dedicated SharePoint groups for content managers
-    * Use view-only permissions for general staff
-    * Set up approval workflows for sensitive content
-
-3. **Content Lifecycle**
-    * Configure version history
-    * Set up retention policies
-    * Use SharePoint workflows for content approval
-
-4. **Metadata Management**
-    * Use managed metadata for consistent tagging
-    * Set up default values for common fields
-    * Make important fields required
-
-### Example SharePoint Views
-
-1. **Content Calendar View**
-    * Group by start date
-    * Filter by active content
-    * Show duration and target screens
-
-2. **Location Manager View**
-    * Group by location
-    * Filter by department
-    * Show status and schedule
-
-3. **Expiration Monitor View**
-    * Sort by end date
-    * Filter for content ending soon
-    * Highlight expired content
-
-### Automation Tips
-
-1. **Power Automate Integration**
-    * Auto-tag files based on library
-    * Set default metadata
-    * Trigger cleanup workflows
-
-2. **Content Validation**
-    * Check file types
-    * Verify required metadata
-    * Validate scheduling conflicts
-
-3. **Reporting**
-    * Track content usage
-    * Monitor screen assignments
-    * Audit content changes
-
-## Best Practices
-
-1. **Dependency Management**
-    * Never edit package-lock.json manually
-    * Use npm commands to manage dependencies:
-
-    ```bash
-    npm install <package>        # Add dependency
-    npm install -D <package>     # Add dev dependency
-    npm update <package>         # Update package
-    npm uninstall <package>      # Remove package
-    ```
-
-2. **Code Style**
-    * ESLint and Prettier are configured
-    * Formatting is automatically handled on commit
-    * Run `npm run format` to manually format code
-
-3. **Testing**
-    * Maintain test coverage above 80%
-    * Write tests for new features
-    * Visual tests are CI-only
-
-4. **Git Workflow**
-    * Commits are automatically linted
-    * Visual tests run on pull requests
-    * CI checks must pass before merge
+   * Trigger: New file in Dropbox folder
+   * Action: Screenly - Upload Asset
+   * Test your Zap and turn it on
 
 ## Available Actions
 
-### Upload Asset
+### 1. Upload Asset
 
-Upload a new asset to your Screenly account:
+Upload files to your Screenly account:
 
-* File upload via URL
-* Custom title
-* Duration setting (optional, defaults to 10 seconds)
+* Supports images, videos, and URLs
+* Set custom titles and durations
+* Accepts files via URL or direct upload
 
-### Add Asset to Playlist
+### 2. Add to Playlist
 
-Add an asset to a playlist with optional scheduling:
+Add content to your playlists:
 
-* Select from existing playlists
-* Select from existing assets
-* Set asset duration
-* Optional date range scheduling (start/end dates)
+* Choose from your existing playlists
+* Set display duration
+* Schedule content with start/end dates
+* Select target screens
 
-### Assign Screen to Playlist
+### 3. Complete Workflow
 
-Assign a screen to play a specific playlist:
+Do everything in one step:
 
-* Select from available screens
-* Select from available playlists
-* Instant updates to screen assignments
+* Upload new content
+* Add to playlist
+* Assign to screens
+* Set schedule
+* Perfect for automated content management
+
+### 4. Cleanup
+
+Maintain your content library:
+
+* Remove Zapier-created content
+* Automatic cleanup based on rules
+* Safe deletion with confirmation
+
+### 5. Enable/Disable Playlist
+
+Control playlist visibility dynamically:
+
+* Enable or disable playlists based on conditions
+* Schedule playlist activation periods
+* Perfect for:
+  * Weather-based content
+  * Time-sensitive promotions
+  * Event-driven displays
+  * Seasonal campaigns
+
+## Common Use Cases
+
+1. **Automated Content Updates**
+   * Connect Dropbox/Google Drive/SharePoint
+   * New files automatically appear on screens
+   * Perfect for marketing teams
+
+2. **Scheduled Displays**
+   * Show content during specific times
+   * Automate weekly/monthly updates
+   * Event-based content management
+
+3. **Multi-Screen Management**
+   * Different content for different locations
+   * Department-specific displays
+   * Emergency broadcast system
+
+4. **Content Library Management**
+   * Automatic file organization
+   * Scheduled content rotation
+   * Cleanup old content
+
+5. **Weather-Based Dynamic Content**
+   * **Example: Smart Weather-Driven Displays**
+     * Use Weather API as trigger (hourly check)
+     * **Temperature-Based Content:**
+       * When temperature > 20°C:
+         * Enable "Summer Treats" playlist (ice cream, cold drinks)
+         * Disable "Winter Warmers" playlist
+       * When temperature < 0°C:
+         * Enable "Winter Warmers" playlist (hot chocolate, soups)
+         * Disable "Summer Treats" playlist
+     * **Rain-Based Content:**
+       * When it's raining:
+         * Enable "Rainy Day Specials" playlist (umbrellas, raincoats)
+         * Show "Stay Dry" promotions
+       * When rain stops:
+         * Return to default seasonal playlist
+         * Disable rain-specific promotions
+   * **Setup Steps:**
+     1. Create weather-specific playlists in Screenly:
+        * "Summer Treats" - cold items
+        * "Winter Warmers" - hot items
+        * "Rainy Day Specials" - weather protection items
+     2. In Zapier:
+        * Trigger: Weather by Zapier (check every hour)
+        * Filter 1: Temperature conditions
+        * Filter 2: Precipitation conditions
+        * Actions:
+          * Enable/Disable appropriate playlists
+          * Update content based on current conditions
+   * **Benefits:**
+     * Automatically adapt to multiple weather conditions
+     * Increase sales with contextual promotions
+     * Show relevant products at the right time
+     * Create urgency with weather-specific offers
+     * No manual playlist management needed
 
 ## Security
 
 * API keys are stored securely by Zapier
 * All API requests are made over HTTPS
 * The integration follows Zapier's security best practices
-
-## License
-
-See [LICENSE](LICENSE) file for details.
 
 ## Example Integrations
 
@@ -334,3 +210,113 @@ See [LICENSE](LICENSE) file for details.
     * Trigger: Schedule or SharePoint/Dropbox/Box update
     * Action: Complete Workflow with end dates
     * Use Case: Automatically rotate content based on schedules
+
+---
+
+## Developer Documentation
+
+### Prerequisites
+
+* Node.js 20.x
+* npm
+* A Screenly account with API access
+
+### Installation
+
+1. Install dependencies:
+
+   ```bash
+   npm install
+   ```
+
+2. Configure your Screenly API key:
+
+   * Get your API key from [Screenly Settings](
+     https://app.screenlyapp.com/settings/api-keys
+     )
+   * When setting up the Zapier integration, you'll be prompted to enter this
+     API key
+
+### Available Scripts
+
+* `npm test` - Run unit tests with coverage
+* `npm run test:watch` - Run tests in watch mode
+* `npm run lint` - Run ESLint
+* `npm run format` - Format code with Prettier
+* `npm run clean` - Clean up generated files
+* `npm run prepare` - Install git hooks (runs automatically after npm install)
+
+Visual tests are only run in CI environment:
+
+* `npm run test:visual` - Displays information about visual tests
+* `npm run test:visual:ci` - Runs visual tests (CI only)
+
+### Code Quality
+
+The project uses several tools to ensure code quality:
+
+* **ESLint** - For code linting
+* **Prettier** - For code formatting
+* **Jest** - For testing
+* **Husky** - For git hooks
+* **lint-staged** - For running checks on staged files
+
+These run automatically on commit, but you can also run them manually:
+
+```bash
+npm run lint    # Check code style
+npm run format  # Fix code formatting
+```
+
+### Git Hooks
+
+Pre-commit hooks are set up to:
+
+* Lint JavaScript files
+* Format code with Prettier
+* Run tests
+
+### Visual Testing
+
+Visual tests are automatically run in CI and generate screenshots of:
+
+* Upload Asset Form
+* Complete Workflow Form
+* Cleanup Confirmation Form
+
+These tests are skipped locally to avoid environment-specific issues.
+
+### Best Practices
+
+1. **Dependency Management**
+
+   * Never edit package-lock.json manually
+   * Use npm commands to manage dependencies:
+
+   ```bash
+   npm install <package>        # Add dependency
+   npm install -D <package>     # Add dev dependency
+   npm update <package>         # Update package
+   npm uninstall <package>      # Remove package
+   ```
+
+2. **Code Style**
+    * ESLint and Prettier are configured
+    * Formatting is automatically handled on commit
+    * Run `npm run format` to manually format code
+
+3. **Testing**
+    * Maintain test coverage above 80%
+    * Write tests for new features
+    * Visual tests are CI-only
+
+4. **Git Workflow**
+    * Commits are automatically linted
+    * Visual tests run on pull requests
+    * CI checks must pass before merge
+
+### License
+
+See [LICENSE](LICENSE) file for details.
+
+```</rewritten_file>
