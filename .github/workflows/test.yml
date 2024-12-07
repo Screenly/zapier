@@ -69,8 +69,14 @@ jobs:
 
     - name: Upload screenshots
       if: always()
+      run: |
+        echo "Looking for PNG files in workspace:"
+        find $GITHUB_WORKSPACE -type f -name "*.png" -ls
+
+    - name: Upload artifacts
+      if: always()
       uses: actions/upload-artifact@v4
       with:
         name: screenshots
-        path: |
-          test/__image_snapshots__
+        path: "**/*.png"
+        if-no-files-found: warn
