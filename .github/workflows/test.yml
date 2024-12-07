@@ -54,48 +54,30 @@ jobs:
         path: coverage/
     - name: Run visual tests
       run: |
-        # Create snapshot directory
         mkdir -p test/__image_snapshots__
+        CI=1 xvfb-run --auto-servernum --server-args="-screen 0 1280x800x24" npm run test:visual:ci -- --json --outputFile=visual-test-results.json
 
-        # Run tests with update flag to generate snapshots and JSON output
-        CI=1 xvfb-run --auto-servernum --server-args="-screen 0 1280x800x24" npm run test:visual:ci -- -u --json --outputFile=visual-test-results.json
-
-    - name: Generate visual test summary
-      if: always()
-      run: |
+        # Show test results
         echo "## Visual Test Results" >> $GITHUB_STEP_SUMMARY
-
-        # Show test results using jq
-        echo "### Test Results" >> $GITHUB_STEP_SUMMARY
         echo "| Total | Passed | Failed | Skipped |" >> $GITHUB_STEP_SUMMARY
         echo "|-------|---------|---------|----------|" >> $GITHUB_STEP_SUMMARY
-        if [ -f "visual-test-results.json" ]; then
-          jq -r '"| \(.numTotalTests) | \(.numPassedTests) | \(.numFailedTests) | \(.numPendingTests) |"' visual-test-results.json >> $GITHUB_STEP_SUMMARY || {
-            echo "| Failed to parse test results | - | - | - |" >> $GITHUB_STEP_SUMMARY
-          }
-        else
-          echo "| No test results file found | - | - | - |" >> $GITHUB_STEP_SUMMARY
-        fi
-        echo "" >> $GITHUB_STEP_SUMMARY
+        jq -r '"| \(.numTotalTests) | \(.numPassedTests) | \(.numFailedTests) | \(.numPendingTests) |"' visual-test-results.json >> $GITHUB_STEP_SUMMARY
 
-        # Show screenshots
-        echo "### Screenshots" >> $GITHUB_STEP_SUMMARY
-        shopt -s nullglob  # Handle case when no files match pattern
-        for img in test/__image_snapshots__/*.png; do
-          if [ -f "$img" ]; then
-            name=$(basename "$img" -snap.png | sed 's/ci-//')
-            echo "#### $name" >> $GITHUB_STEP_SUMMARY
-            echo "<details><summary>$(basename "$img")</summary>" >> $GITHUB_STEP_SUMMARY
-            echo "<img src=\"data:image/png;base64,$(base64 -w 0 "$img")\" width=\"800\">" >> $GITHUB_STEP_SUMMARY
-            echo "</details>" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-          fi
-        done
+    - name: Upload artifacts
+      if: always()
+      run: |
+        # Find and verify files
+        echo "Looking for screenshots..."
+        find . -name "*.png" -ls
 
-    - name: Upload screenshots
+        # Create artifacts directory and copy files
+        mkdir -p artifacts
+        find . -name "*.png" -exec cp {} artifacts/ \;
+
+    - name: Upload found files
       if: always()
       uses: actions/upload-artifact@v4
       with:
-        name: visual-test-screenshots
-        path: test/__image_snapshots__
+        name: screenshots
+        path: artifacts
         if-no-files-found: warn
