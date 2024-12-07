@@ -63,21 +63,14 @@ jobs:
         echo "|-------|---------|---------|----------|" >> $GITHUB_STEP_SUMMARY
         jq -r '"| \(.numTotalTests) | \(.numPassedTests) | \(.numFailedTests) | \(.numPendingTests) |"' visual-test-results.json >> $GITHUB_STEP_SUMMARY
 
-    - name: Upload artifacts
-      if: always()
-      run: |
-        # Find and verify files
-        echo "Looking for screenshots..."
-        find . -name "*.png" -ls
+        # Debug - show what files exist
+        echo "Contents of test/__image_snapshots__:"
+        ls -la test/__image_snapshots__/
 
-        # Create artifacts directory and copy files
-        mkdir -p artifacts
-        find . -name "*.png" -exec cp {} artifacts/ \;
-
-    - name: Upload found files
+    - name: Upload screenshots
       if: always()
       uses: actions/upload-artifact@v4
       with:
         name: screenshots
-        path: artifacts
-        if-no-files-found: warn
+        path: |
+          test/__image_snapshots__
