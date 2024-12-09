@@ -23,16 +23,9 @@ jobs:
       - name: Run tests
         run: npm test
 
-      - name: Install Zapier CLI
-        run: npm install -g zapier-platform-cli
-
-      - name: Link to Existing Zapier Integration
-        env:
-          ZAPIER_DEPLOY_KEY: ${{ secrets.ZAPIER_DEPLOY_KEY }}
-          ZAPIER_INTEGRATION_ID: ${{ secrets.ZAPIER_INTEGRATION_ID }}
-        run: zapier link $ZAPIER_INTEGRATION_ID
-
       - name: Deploy to Zapier
-        env:
-          ZAPIER_DEPLOY_KEY: ${{ secrets.ZAPIER_DEPLOY_KEY }}
-        run: zapier push --skip-npm-install
+        uses: zapier/actions/cli@v1
+        with:
+          deploy-key: ${{ secrets.ZAPIER_DEPLOY_KEY }}
+          app-id: ${{ secrets.ZAPIER_INTEGRATION_ID }}
+          command: push --skip-npm-install
