@@ -13,8 +13,8 @@ const makeRequest = async (z, url, options = {}) => {
     ...options,
     headers: {
       ...options.headers,
-      Authorization: `Token ${z.authData.api_key}`
-    }
+      Authorization: `Token ${z.authData.api_key}`,
+    },
   });
 
   return handleError(response, 'Screenly API Error');
@@ -22,5 +22,5 @@ const makeRequest = async (z, url, options = {}) => {
 
 module.exports = {
   handleError,
-  makeRequest
+  makeRequest,
 };

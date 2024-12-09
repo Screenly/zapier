@@ -20,8 +20,8 @@ describe('Authentication', () => {
   test('succeeds with valid API key', async () => {
     const bundle = {
       authData: {
-        api_key: TEST_API_KEY
-      }
+        api_key: TEST_API_KEY,
+      },
     };
 
     nock('https://api.screenlyapp.com')
@@ -36,8 +36,8 @@ describe('Authentication', () => {
   test('fails with invalid API key', async () => {
     const bundle = {
       authData: {
-        api_key: 'invalid-api-key'
-      }
+        api_key: 'invalid-api-key',
+      },
     };
 
     nock('https://api.screenlyapp.com')
@@ -45,8 +45,7 @@ describe('Authentication', () => {
       .matchHeader('Authorization', 'Token invalid-api-key')
       .reply(401, { detail: 'Invalid token' });
 
-    await expect(appTester(App.authentication.test, bundle))
-      .rejects.toThrow();
+    await expect(appTester(App.authentication.test, bundle)).rejects.toThrow();
   });
 });
 
@@ -58,19 +57,17 @@ describe('Upload Asset', () => {
   test('successfully uploads an asset', async () => {
     const bundle = {
       authData: {
-        api_key: TEST_API_KEY
+        api_key: TEST_API_KEY,
       },
       inputData: {
         file: 'https://example.com/image.jpg',
         title: 'Test Image',
-        duration: 10
-      }
+        duration: 10,
+      },
     };
 
     // Mock the file download
-    nock('https://example.com')
-      .get('/image.jpg')
-      .reply(200, 'fake-file-content');
+    nock('https://example.com').get('/image.jpg').reply(200, 'fake-file-content');
 
     // Mock the asset upload
     nock('https://api.screenlyapp.com')
@@ -79,7 +76,7 @@ describe('Upload Asset', () => {
       .reply(201, {
         id: 'asset-123',
         title: 'Test Image',
-        duration: 10
+        duration: 10,
       });
 
     const response = await appTester(App.creates.upload_asset.operation.perform, bundle);
@@ -91,21 +88,18 @@ describe('Upload Asset', () => {
   test('handles upload failure', async () => {
     const bundle = {
       authData: {
-        api_key: TEST_API_KEY
+        api_key: TEST_API_KEY,
       },
       inputData: {
         file: 'https://example.com/image.jpg',
         title: 'Test Image',
-        duration: 10
-      }
+        duration: 10,
+      },
     };
 
-    nock('https://example.com')
-      .get('/image.jpg')
-      .reply(404);
+    nock('https://example.com').get('/image.jpg').reply(404);
 
-    await expect(appTester(App.creates.upload_asset.operation.perform, bundle))
-      .rejects.toThrow();
+    await expect(appTester(App.creates.upload_asset.operation.perform, bundle)).rejects.toThrow();
   });
 });
 
@@ -117,37 +111,37 @@ describe('Schedule Playlist Item', () => {
   test('successfully adds asset to playlist without conditions', async () => {
     const bundle = {
       authData: {
-        api_key: TEST_API_KEY
+        api_key: TEST_API_KEY,
       },
       inputData: {
         playlist_id: 'playlist-123',
         asset_id: 'asset-123',
-        duration: 15
-      }
+        duration: 15,
+      },
     };
 
     // Mock the asset duration update
     nock('https://api.screenlyapp.com')
       .patch('/api/v4/assets/asset-123/', {
-        duration: 15
+        duration: 15,
       })
       .matchHeader('Authorization', `Token ${TEST_API_KEY}`)
       .reply(200, {
         id: 'asset-123',
-        duration: 15
+        duration: 15,
       });
 
     // Mock the playlist item creation
     nock('https://api.screenlyapp.com')
       .post('/api/v4/playlist-items/', {
         asset: 'asset-123',
-        playlist: 'playlist-123'
+        playlist: 'playlist-123',
       })
       .matchHeader('Authorization', `Token ${TEST_API_KEY}`)
       .reply(201, {
         id: 'item-123',
         playlist: 'playlist-123',
-        asset: 'asset-123'
+        asset: 'asset-123',
       });
 
     const response = await appTester(App.creates.schedule_playlist_item.operation.perform, bundle);
@@ -159,26 +153,26 @@ describe('Schedule Playlist Item', () => {
   test('successfully adds asset with scheduling', async () => {
     const bundle = {
       authData: {
-        api_key: TEST_API_KEY
+        api_key: TEST_API_KEY,
       },
       inputData: {
         playlist_id: 'playlist-123',
         asset_id: 'asset-123',
         duration: 20,
         start_date: '2023-12-01T00:00:00Z',
-        end_date: '2023-12-31T23:59:59Z'
-      }
+        end_date: '2023-12-31T23:59:59Z',
+      },
     };
 
     // Mock the asset duration update
     nock('https://api.screenlyapp.com')
       .patch('/api/v4/assets/asset-123/', {
-        duration: 20
+        duration: 20,
       })
       .matchHeader('Authorization', `Token ${TEST_API_KEY}`)
       .reply(200, {
         id: 'asset-123',
-        duration: 20
+        duration: 20,
       });
 
     // Mock the playlist item creation
@@ -188,8 +182,8 @@ describe('Schedule Playlist Item', () => {
         playlist: 'playlist-123',
         conditions: {
           start_date: '2023-12-01T00:00:00Z',
-          end_date: '2023-12-31T23:59:59Z'
-        }
+          end_date: '2023-12-31T23:59:59Z',
+        },
       })
       .matchHeader('Authorization', `Token ${TEST_API_KEY}`)
       .reply(201, {
@@ -198,8 +192,8 @@ describe('Schedule Playlist Item', () => {
         asset: 'asset-123',
         conditions: {
           start_date: '2023-12-01T00:00:00Z',
-          end_date: '2023-12-31T23:59:59Z'
-        }
+          end_date: '2023-12-31T23:59:59Z',
+        },
       });
 
     const response = await appTester(App.creates.schedule_playlist_item.operation.perform, bundle);
@@ -214,19 +208,20 @@ describe('Schedule Playlist Item', () => {
       inputData: {
         asset_id: 'asset-123',
         playlist_id: 'playlist-123',
-        duration: -1
-      }
+        duration: -1,
+      },
     };
 
     nock('https://api.screenlyapp.com')
       .patch('/api/v4/assets/asset-123/', {
-        duration: -1
+        duration: -1,
       })
       .matchHeader('Authorization', `Token ${TEST_API_KEY}`)
       .reply(400, { detail: 'Invalid duration' });
 
-    await expect(appTester(App.creates.schedule_playlist_item.operation.perform, bundle))
-      .rejects.toThrow();
+    await expect(
+      appTester(App.creates.schedule_playlist_item.operation.perform, bundle)
+    ).rejects.toThrow();
   });
 
   test('handles playlist addition failure', async () => {
@@ -234,20 +229,21 @@ describe('Schedule Playlist Item', () => {
       authData: { api_key: TEST_API_KEY },
       inputData: {
         asset_id: 'asset-123',
-        playlist_id: 'playlist-123'
-      }
+        playlist_id: 'playlist-123',
+      },
     };
 
     nock('https://api.screenlyapp.com')
       .post('/api/v4/playlist-items/', {
         asset: 'asset-123',
-        playlist: 'playlist-123'
+        playlist: 'playlist-123',
       })
       .matchHeader('Authorization', `Token ${TEST_API_KEY}`)
       .reply(404, { detail: 'Playlist not found' });
 
-    await expect(appTester(App.creates.schedule_playlist_item.operation.perform, bundle))
-      .rejects.toThrow();
+    await expect(
+      appTester(App.creates.schedule_playlist_item.operation.perform, bundle)
+    ).rejects.toThrow();
   });
 });
 
@@ -256,21 +252,22 @@ describe('Helper Functions', () => {
     const z = {
       request: jest.fn().mockResolvedValue({
         status: 404,
-        json: { error: 'Not found' }
+        json: { error: 'Not found' },
       }),
       authData: {
-        api_key: TEST_API_KEY
-      }
+        api_key: TEST_API_KEY,
+      },
     };
 
-    await expect(utils.makeRequest(z, 'https://api.screenlyapp.com/api/v4/test/'))
-      .rejects.toThrow('Screenly API Error');
+    await expect(utils.makeRequest(z, 'https://api.screenlyapp.com/api/v4/test/')).rejects.toThrow(
+      'Screenly API Error'
+    );
   });
 
   test('handleError returns json on success', async () => {
     const response = {
       status: 200,
-      json: { data: 'test' }
+      json: { data: 'test' },
     };
 
     const result = utils.handleError(response, 'Error message');
@@ -281,25 +278,25 @@ describe('Helper Functions', () => {
     const z = {
       request: jest.fn().mockResolvedValue({
         status: 200,
-        json: { data: 'test' }
+        json: { data: 'test' },
       }),
       authData: {
-        api_key: TEST_API_KEY
-      }
+        api_key: TEST_API_KEY,
+      },
     };
 
     await utils.makeRequest(z, 'https://api.screenlyapp.com/api/v4/test/', {
       headers: {
-        'Content-Type': 'application/json'
-      }
+        'Content-Type': 'application/json',
+      },
     });
 
     expect(z.request).toHaveBeenCalledWith({
       url: 'https://api.screenlyapp.com/api/v4/test/',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Token ${TEST_API_KEY}`
-      }
+        Authorization: `Token ${TEST_API_KEY}`,
+      },
     });
   });
 });
@@ -312,8 +309,8 @@ describe('Dynamic Dropdowns', () => {
   test('fetches playlists for dropdown', async () => {
     const bundle = {
       authData: {
-        api_key: TEST_API_KEY
-      }
+        api_key: TEST_API_KEY,
+      },
     };
 
     nock('https://api.screenlyapp.com')
@@ -321,7 +318,7 @@ describe('Dynamic Dropdowns', () => {
       .matchHeader('Authorization', `Token ${TEST_API_KEY}`)
       .reply(200, [
         { id: 'playlist-1', name: 'Playlist 1' },
-        { id: 'playlist-2', name: 'Playlist 2' }
+        { id: 'playlist-2', name: 'Playlist 2' },
       ]);
 
     const response = await appTester(App.triggers.get_playlists.operation.perform, bundle);
@@ -333,8 +330,8 @@ describe('Dynamic Dropdowns', () => {
   test('fetches assets for dropdown', async () => {
     const bundle = {
       authData: {
-        api_key: TEST_API_KEY
-      }
+        api_key: TEST_API_KEY,
+      },
     };
 
     nock('https://api.screenlyapp.com')
@@ -342,7 +339,7 @@ describe('Dynamic Dropdowns', () => {
       .matchHeader('Authorization', `Token ${TEST_API_KEY}`)
       .reply(200, [
         { id: 'asset-1', title: 'Asset 1' },
-        { id: 'asset-2', title: 'Asset 2' }
+        { id: 'asset-2', title: 'Asset 2' },
       ]);
 
     const response = await appTester(App.triggers.get_assets.operation.perform, bundle);
@@ -354,8 +351,8 @@ describe('Dynamic Dropdowns', () => {
   test('fetches screens for dropdown', async () => {
     const bundle = {
       authData: {
-        api_key: TEST_API_KEY
-      }
+        api_key: TEST_API_KEY,
+      },
     };
 
     nock('https://api.screenlyapp.com')
@@ -363,7 +360,7 @@ describe('Dynamic Dropdowns', () => {
       .matchHeader('Authorization', `Token ${TEST_API_KEY}`)
       .reply(200, [
         { id: 'screen-1', name: 'Screen 1' },
-        { id: 'screen-2', name: 'Screen 2' }
+        { id: 'screen-2', name: 'Screen 2' },
       ]);
 
     const response = await appTester(App.triggers.get_screens.operation.perform, bundle);
@@ -385,37 +382,33 @@ describe('Complete Workflow', () => {
         file: 'https://example.com/test.jpg',
         title: 'Test Asset',
         playlist_id: 'playlist-123',
-        screen_id: 'screen-123'
-      }
+        screen_id: 'screen-123',
+      },
     };
 
-    nock('https://example.com')
-      .get('/test.jpg')
-      .reply(200, Buffer.from('fake-image-data'));
+    nock('https://example.com').get('/test.jpg').reply(200, Buffer.from('fake-image-data'));
 
-    nock('https://api.screenlyapp.com')
-      .post('/api/v4/assets/')
-      .reply(201, {
-        id: 'asset-123',
-        title: 'Test Asset'
-      });
+    nock('https://api.screenlyapp.com').post('/api/v4/assets/').reply(201, {
+      id: 'asset-123',
+      title: 'Test Asset',
+    });
 
     nock('https://api.screenlyapp.com')
       .post('/api/v4/playlist-items/', {
         asset: 'asset-123',
-        playlist: 'playlist-123'
+        playlist: 'playlist-123',
       })
       .reply(201, {
-        id: 'item-123'
+        id: 'item-123',
       });
 
     nock('https://api.screenlyapp.com')
       .patch('/api/v4/screens/screen-123/', {
-        playlist: 'playlist-123'
+        playlist: 'playlist-123',
       })
       .reply(200, {
         id: 'screen-123',
-        playlist: 'playlist-123'
+        playlist: 'playlist-123',
       });
 
     const response = await appTester(App.creates.complete_workflow.operation.perform, bundle);
@@ -431,48 +424,44 @@ describe('Complete Workflow', () => {
         file: 'https://example.com/test.jpg',
         title: 'Test Asset',
         new_playlist_name: 'New Playlist',
-        screen_id: 'screen-123'
-      }
+        screen_id: 'screen-123',
+      },
     };
 
-    nock('https://example.com')
-      .get('/test.jpg')
-      .reply(200, Buffer.from('fake-image-data'));
+    nock('https://example.com').get('/test.jpg').reply(200, Buffer.from('fake-image-data'));
 
-    nock('https://api.screenlyapp.com')
-      .post('/api/v4/assets/')
-      .reply(201, {
-        id: 'asset-123',
-        title: 'Test Asset'
-      });
+    nock('https://api.screenlyapp.com').post('/api/v4/assets/').reply(201, {
+      id: 'asset-123',
+      title: 'Test Asset',
+    });
 
     nock('https://api.screenlyapp.com')
       .post('/api/v4/playlists/', {
         name: 'New Playlist',
-        tags: ['created_by_zapier']
+        tags: ['created_by_zapier'],
       })
       .reply(201, {
         id: 'playlist-123',
         name: 'New Playlist',
-        tags: ['created_by_zapier']
+        tags: ['created_by_zapier'],
       });
 
     nock('https://api.screenlyapp.com')
       .post('/api/v4/playlist-items/', {
         asset: 'asset-123',
-        playlist: 'playlist-123'
+        playlist: 'playlist-123',
       })
       .reply(201, {
-        id: 'item-123'
+        id: 'item-123',
       });
 
     nock('https://api.screenlyapp.com')
       .patch('/api/v4/screens/screen-123/', {
-        playlist: 'playlist-123'
+        playlist: 'playlist-123',
       })
       .reply(200, {
         id: 'screen-123',
-        playlist: 'playlist-123'
+        playlist: 'playlist-123',
       });
 
     const response = await appTester(App.creates.complete_workflow.operation.perform, bundle);
@@ -487,12 +476,13 @@ describe('Complete Workflow', () => {
       inputData: {
         file: 'https://example.com/test.jpg',
         title: 'Test Asset',
-        screen_id: 'screen-123'
-      }
+        screen_id: 'screen-123',
+      },
     };
 
-    await expect(appTester(App.creates.complete_workflow.operation.perform, bundle))
-      .rejects.toThrow('Either select an existing playlist or provide a name for a new one');
+    await expect(
+      appTester(App.creates.complete_workflow.operation.perform, bundle)
+    ).rejects.toThrow('Either select an existing playlist or provide a name for a new one');
   });
 });
 
@@ -504,11 +494,11 @@ describe('Cleanup', () => {
   test('successfully cleans up Zapier content', async () => {
     const bundle = {
       authData: {
-        api_key: TEST_API_KEY
+        api_key: TEST_API_KEY,
       },
       inputData: {
-        confirm: true
-      }
+        confirm: true,
+      },
     };
 
     // Mock assets list with some Zapier-created assets
@@ -518,7 +508,7 @@ describe('Cleanup', () => {
       .reply(200, [
         { id: 'asset-1', title: 'Asset 1', tags: ['created_by_zapier'] },
         { id: 'asset-2', title: 'Asset 2', tags: [] },
-        { id: 'asset-3', title: 'Asset 3', tags: ['created_by_zapier'] }
+        { id: 'asset-3', title: 'Asset 3', tags: ['created_by_zapier'] },
       ]);
 
     // Mock playlists list with some Zapier-created playlists
@@ -527,7 +517,7 @@ describe('Cleanup', () => {
       .matchHeader('Authorization', `Token ${TEST_API_KEY}`)
       .reply(200, [
         { id: 'playlist-1', name: 'Playlist 1', tags: ['created_by_zapier'] },
-        { id: 'playlist-2', name: 'Playlist 2', tags: [] }
+        { id: 'playlist-2', name: 'Playlist 2', tags: [] },
       ]);
 
     // Mock playlist deletions
@@ -556,22 +546,23 @@ describe('Cleanup', () => {
     const bundle = {
       authData: { api_key: TEST_API_KEY },
       inputData: {
-        confirm: false
-      }
+        confirm: false,
+      },
     };
 
-    await expect(appTester(App.creates.cleanup_zapier_content.operation.perform, bundle))
-      .rejects.toThrow('Please confirm the cleanup operation');
+    await expect(
+      appTester(App.creates.cleanup_zapier_content.operation.perform, bundle)
+    ).rejects.toThrow('Please confirm the cleanup operation');
   });
 
   test('handles empty lists', async () => {
     const bundle = {
       authData: {
-        api_key: TEST_API_KEY
+        api_key: TEST_API_KEY,
       },
       inputData: {
-        confirm: true
-      }
+        confirm: true,
+      },
     };
 
     // Mock empty assets list

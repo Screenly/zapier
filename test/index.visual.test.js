@@ -22,14 +22,14 @@ describeVisual('Zapier Visual Tests', () => {
         '--disable-gpu',
         '--window-size=1280,800',
         '--disable-web-security',
-        '--disable-features=IsolateOrigins,site-per-process'
+        '--disable-features=IsolateOrigins,site-per-process',
       ],
       ignoreHTTPSErrors: true,
       defaultViewport: {
         width: 1280,
         height: 800,
-        deviceScaleFactor: 1
-      }
+        deviceScaleFactor: 1,
+      },
     });
   });
 
@@ -99,7 +99,7 @@ describeVisual('Zapier Visual Tests', () => {
       type: 'png',
       encoding: null,
       omitBackground: true,
-      fullPage: true
+      fullPage: true,
     });
     expect(Buffer.from(screenshot)).toMatchImageSnapshot();
   });
@@ -165,7 +165,7 @@ describeVisual('Zapier Visual Tests', () => {
       type: 'png',
       encoding: null,
       omitBackground: true,
-      fullPage: true
+      fullPage: true,
     });
     expect(Buffer.from(screenshot)).toMatchImageSnapshot();
   });
@@ -203,7 +203,7 @@ describeVisual('Zapier Visual Tests', () => {
       type: 'png',
       encoding: null,
       omitBackground: true,
-      fullPage: true
+      fullPage: true,
     });
     expect(Buffer.from(screenshot)).toMatchImageSnapshot();
   });
