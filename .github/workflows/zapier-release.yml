@@ -26,15 +26,11 @@ jobs:
       - name: Install Zapier CLI
         run: npm install -g zapier-platform-cli
 
-      - name: Link or Register Zapier Integration
+      - name: Link to Existing Zapier Integration
         env:
           ZAPIER_DEPLOY_KEY: ${{ secrets.ZAPIER_DEPLOY_KEY }}
-        run: |
-          # Try to link first
-          if ! zapier link; then
-            echo "Failed to link, attempting to register new integration..."
-            zapier register "Screenly" --template=start
-          fi
+          ZAPIER_INTEGRATION_ID: ${{ secrets.ZAPIER_INTEGRATION_ID }}
+        run: zapier link $ZAPIER_INTEGRATION_ID
 
       - name: Deploy to Zapier
         env:
