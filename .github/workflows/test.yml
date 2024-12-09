@@ -2,9 +2,9 @@ name: Test
 
 on:
   push:
-    branches: [ master ]
+    branches: [master]
   pull_request:
-    branches: [ master ]
+    branches: [master]
 
 jobs:
   test:
@@ -13,99 +13,107 @@ jobs:
       matrix:
         node-version: [20.x]
     steps:
-    - uses: actions/checkout@v4
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ matrix.node-version }}
-        cache: 'npm'
-    - name: Install dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y libgbm-dev jq xvfb
-        npm ci
+      - uses: actions/checkout@v4
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgbm-dev jq xvfb
+          npm ci
 
-    - name: Lint
-      run: |
-        npm run lint
-        npm run format -- --check
+      - name: Lint
+        run: |
+          npm run lint
+          npm run format -- --check
 
-    - name: Install Chrome
-      uses: browser-actions/setup-chrome@latest
-      with:
-        chrome-version: stable
+      - name: Install Chrome
+        uses: browser-actions/setup-chrome@latest
+        with:
+          chrome-version: stable
 
-    - name: Run tests with coverage
-      run: |
-        # Run tests with coverage and capture results in JSON format
-        npm test -- --coverage-reporters=lcov --coverage-reporters=json-summary --json --outputFile=test-results.json
+      - name: Run tests with mocks
+        run: |
+          # Run tests with coverage and capture results in JSON format
+          npm test -- --coverage-reporters=lcov --coverage-reporters=json-summary --json --outputFile=test-results.json
 
-        # Extract coverage from JSON and format for summary
-        echo "# Test Results (Node ${{ matrix.node-version }})" >> $GITHUB_STEP_SUMMARY
-        echo "## Coverage" >> $GITHUB_STEP_SUMMARY
-        echo "| Type | Coverage | Details |" >> $GITHUB_STEP_SUMMARY
-        echo "|------|----------|----------|" >> $GITHUB_STEP_SUMMARY
+          # Extract coverage from JSON and format for summary
+          echo "# Test Results (Node ${{ matrix.node-version }})" >> $GITHUB_STEP_SUMMARY
+          echo "## Coverage" >> $GITHUB_STEP_SUMMARY
+          echo "| Type | Coverage | Details |" >> $GITHUB_STEP_SUMMARY
+          echo "|------|----------|----------|" >> $GITHUB_STEP_SUMMARY
 
-        # Use jq to parse the coverage JSON
-        jq -r '.total |
-          "| Statements | \(.statements.pct)% | \(.statements.covered)/\(.statements.total) |\n| Branches | \(.branches.pct)% | \(.branches.covered)/\(.branches.total) |\n| Functions | \(.functions.pct)% | \(.functions.covered)/\(.functions.total) |\n| Lines | \(.lines.pct)% | \(.lines.covered)/\(.lines.total) |"' coverage/coverage-summary.json >> $GITHUB_STEP_SUMMARY || {
-            echo "| Coverage data not available | - | - |" >> $GITHUB_STEP_SUMMARY
-          }
+          # Use jq to parse the coverage JSON
+          jq -r '.total |
+            "| Statements | \(.statements.pct)% | \(.statements.covered)/\(.statements.total) |\n| Branches | \(.branches.pct)% | \(.branches.covered)/\(.branches.total) |\n| Functions | \(.functions.pct)% | \(.functions.covered)/\(.functions.total) |\n| Lines | \(.lines.pct)% | \(.lines.covered)/\(.lines.total) |"' coverage/coverage-summary.json >> $GITHUB_STEP_SUMMARY || {
+              echo "| Coverage data not available | - | - |" >> $GITHUB_STEP_SUMMARY
+            }
 
-        # Add test results using jq
-        echo "## Test Results" >> $GITHUB_STEP_SUMMARY
-        echo "| Total | Passed | Failed | Skipped |" >> $GITHUB_STEP_SUMMARY
-        echo "|-------|---------|---------|----------|" >> $GITHUB_STEP_SUMMARY
-        jq -r '"| \(.numTotalTests) | \(.numPassedTests) | \(.numFailedTests) | \(.numPendingTests) |"' test-results.json >> $GITHUB_STEP_SUMMARY
-
-    - name: Upload coverage report
-      uses: actions/upload-artifact@v4
-      with:
-        name: coverage-report
-        path: coverage/
-
-    - name: Run visual tests
-      run: |
-        mkdir -p __image_snapshots__
-        CHROME_PATH="$(which chrome)" xvfb-run --auto-servernum --server-args="-screen 0 1280x800x24" npm run test:visual:ci -- -u --json --outputFile=visual-test-results.json
-
-        # Show test results
-        if [ -f "visual-test-results.json" ]; then
-          echo "## Visual Test Results" >> $GITHUB_STEP_SUMMARY
+          # Add test results using jq
+          echo "## Test Results" >> $GITHUB_STEP_SUMMARY
           echo "| Total | Passed | Failed | Skipped |" >> $GITHUB_STEP_SUMMARY
           echo "|-------|---------|---------|----------|" >> $GITHUB_STEP_SUMMARY
-          jq -r '"| \(.numTotalTests) | \(.numPassedTests) | \(.numFailedTests) | \(.numPendingTests) |"' visual-test-results.json >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-        fi
+          jq -r '"| \(.numTotalTests) | \(.numPassedTests) | \(.numFailedTests) | \(.numPendingTests) |"' test-results.json >> $GITHUB_STEP_SUMMARY
 
-        # Show screenshots in summary
-        {
-          echo "## Screenshots"
-          echo ""
-          for img in __image_snapshots__/ci-*.png; do
-            if [ -f "$img" ]; then
-              name=$(basename "$img" | sed -E 's/ci-Zapier Visual Tests (.+)-1\.png/\1/')
-              echo "### $name"
-              echo ""
-              echo "<details>"
-              echo "<summary>View Screenshot</summary>"
-              echo ""
-              encoded=$(cat "$img" | base64)
-              echo "<img src=\"data:image/png;base64,${encoded}\" width=\"800\">"
-              echo ""
-              echo "</details>"
-              echo ""
-            fi
-          done
-        } >> $GITHUB_STEP_SUMMARY
+      - name: Live API sanity check
+        if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+        env:
+          SCREENLY_API_KEY: ${{ secrets.SCREENLY_API_TOKEN }}
+        run: |
+          echo "## Live API Test Results" >> $GITHUB_STEP_SUMMARY
+          npm test
 
-        # Create a flat directory for artifacts
-        mkdir -p artifacts
-        cp __image_snapshots__/*.png artifacts/
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage/
 
-    - name: Upload artifacts
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: screenshots
-        path: artifacts/
+      - name: Run visual tests
+        run: |
+          mkdir -p __image_snapshots__
+          CHROME_PATH="$(which chrome)" xvfb-run --auto-servernum --server-args="-screen 0 1280x800x24" npm run test:visual:ci -- -u --json --outputFile=visual-test-results.json
+
+          # Show test results
+          if [ -f "visual-test-results.json" ]; then
+            echo "## Visual Test Results" >> $GITHUB_STEP_SUMMARY
+            echo "| Total | Passed | Failed | Skipped |" >> $GITHUB_STEP_SUMMARY
+            echo "|-------|---------|---------|----------|" >> $GITHUB_STEP_SUMMARY
+            jq -r '"| \(.numTotalTests) | \(.numPassedTests) | \(.numFailedTests) | \(.numPendingTests) |"' visual-test-results.json >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # Show screenshots in summary
+          {
+            echo "## Screenshots"
+            echo ""
+            for img in __image_snapshots__/ci-*.png; do
+              if [ -f "$img" ]; then
+                name=$(basename "$img" | sed -E 's/ci-Zapier Visual Tests (.+)-1\.png/\1/')
+                echo "### $name"
+                echo ""
+                echo "<details>"
+                echo "<summary>View Screenshot</summary>"
+                echo ""
+                encoded=$(cat "$img" | base64)
+                echo "<img src=\"data:image/png;base64,${encoded}\" width=\"800\">"
+                echo ""
+                echo "</details>"
+                echo ""
+              fi
+            done
+          } >> $GITHUB_STEP_SUMMARY
+
+          # Create a flat directory for artifacts
+          mkdir -p artifacts
+          cp __image_snapshots__/*.png artifacts/
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshots
+          path: artifacts/

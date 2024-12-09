@@ -16,7 +16,7 @@ const toMatchImageSnapshot = configureToMatchImageSnapshot({
   // Better error handling
   updatePassedSnapshot: false,
   blur: 2,
-  allowSizeMismatch: true
+  allowSizeMismatch: true,
 });
 
 expect.extend({ toMatchImageSnapshot });
