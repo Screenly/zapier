@@ -35,7 +35,11 @@ jobs:
       - name: Validate Zapier Integration
         env:
           ZAPIER_DEPLOY_KEY: ${{ secrets.ZAPIER_DEPLOY_KEY }}
-        run: zapier validate
+        run: |
+          echo "## Zapier Validation Results" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          zapier validate | tee /dev/tty >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
 
       - name: Deploy to Zapier
         env:
