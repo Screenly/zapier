@@ -35,7 +35,7 @@ jobs:
         with:
           chrome-version: stable
 
-      - name: Run tests with coverage
+      - name: Run tests with mocks
         run: |
           # Run tests with coverage and capture results in JSON format
           npm test -- --coverage-reporters=lcov --coverage-reporters=json-summary --json --outputFile=test-results.json
@@ -57,6 +57,14 @@ jobs:
           echo "| Total | Passed | Failed | Skipped |" >> $GITHUB_STEP_SUMMARY
           echo "|-------|---------|---------|----------|" >> $GITHUB_STEP_SUMMARY
           jq -r '"| \(.numTotalTests) | \(.numPassedTests) | \(.numFailedTests) | \(.numPendingTests) |"' test-results.json >> $GITHUB_STEP_SUMMARY
+
+      - name: Live API sanity check
+        if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+        env:
+          SCREENLY_API_KEY: ${{ secrets.SCREENLY_API_TOKEN }}
+        run: |
+          echo "## Live API Test Results" >> $GITHUB_STEP_SUMMARY
+          npm test
 
       - name: Upload coverage report
         uses: actions/upload-artifact@v4

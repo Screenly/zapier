@@ -1,5 +1,9 @@
 # Screenly Zapier Integration
 
+<p align="center">
+  <img src="assets/logo-full.svg" alt="Screenly for Zapier" width="400">
+</p>
+
 [![Test](https://github.com/screenly/zapier/actions/workflows/test.yml/badge.svg?branch=master)](https://github.com/screenly/zapier/actions/workflows/test.yml)
 
 A Zapier integration for automating Screenly digital signage operations. Connect your
