@@ -23,9 +23,16 @@ jobs:
       - name: Run tests
         run: npm test
 
+      - name: Install Zapier CLI
+        run: npm install -g zapier-platform-cli
+
+      - name: Create Zapier config
+        env:
+          ZAPIER_DEPLOY_KEY: ${{ secrets.ZAPIER_DEPLOY_KEY }}
+        run: |
+          echo "{\"id\":${{ secrets.ZAPIER_INTEGRATION_ID }}, \"key\":\"${{ secrets.ZAPIER_DEPLOY_KEY }}\"}" > .zapierapprc
+
       - name: Deploy to Zapier
-        uses: zapier/actions/cli@v1
-        with:
-          deploy-key: ${{ secrets.ZAPIER_DEPLOY_KEY }}
-          app-id: ${{ secrets.ZAPIER_INTEGRATION_ID }}
-          command: push --skip-npm-install
+        env:
+          ZAPIER_DEPLOY_KEY: ${{ secrets.ZAPIER_DEPLOY_KEY }}
+        run: zapier push --skip-npm-install
