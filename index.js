@@ -1,4 +1,5 @@
 const FormData = require('form-data');
+const utils = require('./utils');
 
 // Authentication setup
 const authentication = {
@@ -15,33 +16,11 @@ const authentication = {
       key: 'api_key',
       type: 'string',
       required: true,
-      secure: true,
       label: 'API Key',
       helpText: 'Your Screenly API key from https://app.screenlyapp.com/settings/api-keys'
     }
-  ]
-};
-
-// Helper to handle error responses
-const handleError = (response, customMessage) => {
-  if (response.status >= 400) {
-    throw new Error(customMessage);
-  }
-  return response.json;
-};
-
-// Helper to make authenticated requests
-const makeRequest = async (z, url, options = {}) => {
-  const response = await z.request({
-    url,
-    ...options,
-    headers: {
-      ...options.headers,
-      Authorization: `Token ${z.authData.api_key}`
-    }
-  });
-
-  return handleError(response, 'Screenly API Error');
+  ],
+  connectionLabel: '{{bundle.authData.api_key}}'
 };
 
 // Upload Asset Action
@@ -103,7 +82,14 @@ const uploadAsset = {
         body: formData
       });
 
-      return handleError(response, 'Failed to upload asset');
+      return utils.handleError(response, 'Failed to upload asset');
+    },
+    sample: {
+      id: 1,
+      title: 'Sample Asset',
+      duration: 10,
+      type: 'image',
+      url: 'https://example.com/sample.jpg'
     }
   }
 };
@@ -211,6 +197,15 @@ const schedulePlaylistItem = {
       }
 
       return response.json;
+    },
+    sample: {
+      id: 1,
+      asset: 1,
+      playlist: 1,
+      conditions: {
+        start_date: '2024-01-01T00:00:00Z',
+        end_date: '2024-12-31T23:59:59Z'
+      }
     }
   }
 };
@@ -260,6 +255,11 @@ const assignScreenToPlaylist = {
       }
 
       return response.json;
+    },
+    sample: {
+      id: 1,
+      name: 'Sample Screen',
+      playlist: 1
     }
   }
 };
@@ -270,7 +270,7 @@ const getScreens = {
   noun: 'Screen',
   display: {
     label: 'Get Screens',
-    description: 'Triggers when fetching screens list'
+    description: 'Triggers when listing available Screenly screens.'
   },
   operation: {
     perform: async (z, bundle) => {
@@ -281,7 +281,13 @@ const getScreens = {
         }
       });
 
-      return handleError(response, 'Failed to fetch screens');
+      return utils.handleError(response, 'Failed to fetch screens');
+    },
+    sample: {
+      id: 1,
+      name: 'Sample Screen',
+      description: 'A sample screen',
+      playlist: 1
     }
   }
 };
@@ -292,7 +298,7 @@ const getPlaylists = {
   noun: 'Playlist',
   display: {
     label: 'Get Playlists',
-    description: 'Triggers when fetching playlists list'
+    description: 'Triggers when listing available Screenly playlists.'
   },
   operation: {
     perform: async (z, bundle) => {
@@ -303,7 +309,13 @@ const getPlaylists = {
         }
       });
 
-      return handleError(response, 'Failed to fetch playlists');
+      return utils.handleError(response, 'Failed to fetch playlists');
+    },
+    sample: {
+      id: 1,
+      name: 'Sample Playlist',
+      description: 'A sample playlist',
+      items_count: 5
     }
   }
 };
@@ -314,7 +326,7 @@ const getAssets = {
   noun: 'Asset',
   display: {
     label: 'Get Assets',
-    description: 'Triggers when fetching assets list'
+    description: 'Triggers when listing available Screenly assets.'
   },
   operation: {
     perform: async (z, bundle) => {
@@ -325,7 +337,14 @@ const getAssets = {
         }
       });
 
-      return handleError(response, 'Failed to fetch assets');
+      return utils.handleError(response, 'Failed to fetch assets');
+    },
+    sample: {
+      id: 1,
+      title: 'Sample Asset',
+      type: 'image',
+      duration: 10,
+      url: 'https://example.com/sample.jpg'
     }
   }
 };
@@ -420,7 +439,7 @@ const completeWorkflow = {
         body: formData
       });
 
-      const asset = handleError(assetResponse, 'Failed to upload asset');
+      const asset = utils.handleError(assetResponse, 'Failed to upload asset');
 
       // Step 2: Get or create playlist
       let playlistId = bundle.inputData.playlist_id;
@@ -440,7 +459,7 @@ const completeWorkflow = {
           }
         });
 
-        const playlist = handleError(playlistResponse, 'Failed to create playlist');
+        const playlist = utils.handleError(playlistResponse, 'Failed to create playlist');
         playlistId = playlist.id;
       }
 
@@ -458,7 +477,7 @@ const completeWorkflow = {
         }
       });
 
-      handleError(playlistItemResponse, 'Failed to add asset to playlist');
+      utils.handleError(playlistItemResponse, 'Failed to add asset to playlist');
 
       // Step 4: Assign playlist to screen
       const screenResponse = await z.request({
@@ -473,13 +492,19 @@ const completeWorkflow = {
         }
       });
 
-      handleError(screenResponse, 'Failed to assign playlist to screen');
+      utils.handleError(screenResponse, 'Failed to assign playlist to screen');
 
       return {
         asset: asset,
         playlist_id: playlistId,
         screen_id: bundle.inputData.screen_id
       };
+    },
+    sample: {
+      asset_id: 1,
+      playlist_id: 1,
+      screen_id: 1,
+      message: 'Successfully set up complete workflow'
     }
   }
 };
@@ -516,7 +541,7 @@ const cleanupZapierContent = {
         }
       });
 
-      const assets = handleError(assetsResponse, 'Failed to fetch assets')
+      const assets = utils.handleError(assetsResponse, 'Failed to fetch assets')
         .filter(asset => asset.tags.includes(ZAPIER_TAG));
 
       // Step 2: Get all Zapier-created playlists
@@ -528,7 +553,7 @@ const cleanupZapierContent = {
         }
       });
 
-      const playlists = handleError(playlistsResponse, 'Failed to fetch playlists')
+      const playlists = utils.handleError(playlistsResponse, 'Failed to fetch playlists')
         .filter(playlist => playlist.tags && playlist.tags.includes(ZAPIER_TAG));
 
       // Step 3: Delete assets
@@ -557,19 +582,28 @@ const cleanupZapierContent = {
         playlists_removed: playlists.length,
         assets_removed: assets.length
       };
+    },
+    sample: {
+      assets_removed: 1,
+      playlists_removed: 1,
+      message: 'Successfully cleaned up Zapier content'
     }
   }
 };
 
+// Export the app definition
 module.exports = {
   version: require('./package.json').version,
   platformVersion: require('zapier-platform-core').version,
+
   authentication,
+
   triggers: {
     [getScreens.key]: getScreens,
     [getPlaylists.key]: getPlaylists,
     [getAssets.key]: getAssets
   },
+
   creates: {
     [uploadAsset.key]: uploadAsset,
     [schedulePlaylistItem.key]: schedulePlaylistItem,
@@ -577,7 +611,8 @@ module.exports = {
     [completeWorkflow.key]: completeWorkflow,
     [cleanupZapierContent.key]: cleanupZapierContent
   },
-  // Export helper functions for testing
-  makeRequest,
-  handleError
+
+  searches: {},
+
+  resources: {}
 };

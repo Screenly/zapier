@@ -338,6 +338,40 @@ These tests are skipped locally to avoid environment-specific issues.
     * Visual tests run on pull requests
     * CI checks must pass before merge
 
+### Deployment
+
+The integration is automatically deployed to Zapier when a new version tag is pushed to GitHub.
+
+1. Create and push a new version tag:
+   ```bash
+   git tag -a v0.1.0 -m "Initial release"
+   git push origin v0.1.0
+   ```
+
+2. The GitHub Action will:
+   * Run tests
+   * Deploy to Zapier
+
+### Setting up Zapier Deployment
+
+1. Get your Zapier Deploy Key:
+   ```bash
+   zapier login
+   zapier register "Screenly"  # Only needed for first-time setup
+   zapier deploykey
+   ```
+
+2. Add the deploy key to GitHub:
+   * Go to your repository's Settings > Secrets > Actions
+   * Add a new secret named `ZAPIER_DEPLOY_KEY`
+   * Paste your deploy key as the value
+
+### Version Management
+
+* Use semantic versioning (MAJOR.MINOR.PATCH)
+* Tag format: `v*.*.*` (e.g., v0.1.0, v1.0.0)
+* Pre-release versions: Use `-beta`, `-alpha` suffixes
+
 ### License
 
 See [LICENSE](LICENSE) file for details.
