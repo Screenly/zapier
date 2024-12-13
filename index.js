@@ -1,35 +1,249 @@
-const FormData = require('form-data');
 const utils = require('./utils');
+const FormData = require('form-data');
 
 // Authentication setup
 const authentication = {
   type: 'custom',
-  test: {
-    headers: {
-      Authorization: 'Token {{bundle.authData.api_key}}',
-    },
-    url: 'https://api.screenlyapp.com/api/v4/assets/',
-    method: 'GET',
+  test: async (z, bundle) => {
+    try {
+      const response = await utils.makeRequest(z, 'https://api.screenlyapp.com/api/v4/assets/', {
+        params: { limit: 1 },
+        headers: {
+          Authorization: `Token ${bundle.authData.api_key}`
+        }
+      });
+      return response.json;
+    } catch (error) {
+      z.console.log('Authentication test failed:', error.message);
+      throw error;
+    }
   },
   fields: [
     {
       key: 'api_key',
       type: 'string',
       required: true,
-      label: 'API Key',
+      label: 'Screenly API Key',
       helpText: 'Your Screenly API key from https://app.screenlyapp.com/settings/api-keys',
+    },
+    {
+      key: 'google_access_token',
+      type: 'string',
+      required: false,
+      label: 'Google Drive Access Token',
+      helpText: 'Required only if you plan to use files from Google Drive',
+    },
+    {
+      key: 'box_access_token',
+      type: 'string',
+      required: false,
+      label: 'Box Access Token',
+      helpText: 'Required only if you plan to use files from Box',
+    },
+    {
+      key: 'dropbox_access_token',
+      type: 'string',
+      required: false,
+      label: 'Dropbox Access Token',
+      helpText: 'Required only if you plan to use files from Dropbox',
     },
   ],
   connectionLabel: '{{bundle.authData.api_key}}',
 };
 
-// Upload Asset Action
+// File handling utilities
+const fileUtils = {
+  isGoogleDriveUrl(url) {
+    return url.includes('drive.google.com') || url.includes('docs.google.com');
+  },
+
+  isBoxUrl(url) {
+    return url.includes('app.box.com') || url.includes('box.com/s/');
+  },
+
+  isDropboxUrl(url) {
+    return url.includes('dropbox.com/s/');
+  },
+
+  getGoogleDriveFileId(url) {
+    const patterns = [
+      /\/file\/d\/([^/]+)/,  // matches /file/d/{fileId}
+      /id=([^&]+)/,          // matches ?id={fileId}
+      /\/document\/d\/([^/]+)/, // matches /document/d/{fileId}
+    ];
+
+    for (const pattern of patterns) {
+      const match = url.match(pattern);
+      if (match && match[1]) {
+        return match[1];
+      }
+    }
+    throw new Error('Invalid Google Drive URL format');
+  },
+
+  getBoxFileId(url) {
+    const match = url.match(/\/s\/([^/]+)/);
+    if (!match || !match[1]) {
+      throw new Error('Invalid Box URL format');
+    }
+    return match[1];
+  },
+
+  getDropboxFileId(url) {
+    const match = url.match(/\/s\/([^/]+)/);
+    if (!match || !match[1]) {
+      throw new Error('Invalid Dropbox URL format');
+    }
+    return match[1];
+  },
+
+  async getGoogleDriveDownloadUrl(z, fileId, token) {
+    try {
+      const response = await utils.makeRequest(z, `https://www.googleapis.com/drive/v3/files/${fileId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        params: {
+          fields: 'name,mimeType,webContentLink',
+        },
+      });
+
+      const { name, mimeType, webContentLink } = response.json;
+      utils.validateFileType(mimeType);
+
+      return {
+        name,
+        type: mimeType,
+        url: webContentLink,
+      };
+    } catch (error) {
+      utils.handleGoogleError(error);
+    }
+  },
+
+  async getBoxDownloadUrl(z, fileId, token) {
+    try {
+      const fileResponse = await utils.makeRequest(z, `https://api.box.com/2.0/files/${fileId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const { name, type } = fileResponse.json;
+      utils.validateFileType(type);
+
+      const downloadResponse = await utils.makeRequest(z, `https://api.box.com/2.0/files/${fileId}/content`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        followRedirect: false,
+      });
+
+      const location = downloadResponse.headers?.get('location');
+      if (!location) {
+        throw new Error('Failed to get download URL from Box');
+      }
+
+      return {
+        name,
+        type,
+        url: location,
+      };
+    } catch (error) {
+      utils.handleBoxError(error);
+    }
+  },
+
+  async getDropboxDownloadUrl(z, fileId, token) {
+    try {
+      const metadataResponse = await utils.makeRequest(z, 'https://api.dropboxapi.com/2/sharing/get_shared_link_metadata', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: {
+          url: `https://www.dropbox.com/s/${fileId}`,
+        },
+      });
+
+      const { name, link_metadata } = metadataResponse.json;
+      const mimeType = link_metadata.mime_type;
+      utils.validateFileType(mimeType);
+
+      const downloadResponse = await utils.makeRequest(z, 'https://api.dropboxapi.com/2/sharing/get_shared_link_file', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Dropbox-API-Arg': JSON.stringify({ url: `https://www.dropbox.com/s/${fileId}` }),
+        },
+      });
+
+      const location = downloadResponse.headers?.get('location');
+      if (!location) {
+        throw new Error('Failed to get download URL from Dropbox');
+      }
+
+      return {
+        name,
+        type: mimeType,
+        url: location,
+      };
+    } catch (error) {
+      utils.handleDropboxError(error);
+    }
+  },
+
+  async getDownloadUrl(z, bundle) {
+    const { file } = bundle.inputData;
+    const { google_access_token, box_access_token, dropbox_access_token } = bundle.authData;
+
+    // Check for cloud storage URLs first
+    if (this.isGoogleDriveUrl(file)) {
+      if (!google_access_token) {
+        throw new Error('Google Drive access token is required for Google Drive files');
+      }
+      const fileId = this.getGoogleDriveFileId(file);
+      return this.getGoogleDriveDownloadUrl(z, fileId, google_access_token);
+    }
+
+    if (this.isDropboxUrl(file)) {
+      if (!dropbox_access_token) {
+        throw new Error('Dropbox access token is required for Dropbox files');
+      }
+      const fileId = this.getDropboxFileId(file);
+      return this.getDropboxDownloadUrl(z, fileId, dropbox_access_token);
+    }
+
+    if (this.isBoxUrl(file)) {
+      if (!box_access_token) {
+        throw new Error('Box access token is required for Box files');
+      }
+      const fileId = this.getBoxFileId(file);
+      return this.getBoxDownloadUrl(z, fileId, box_access_token);
+    }
+
+    // For direct URLs, validate the URL format
+    try {
+      const url = new URL(file);
+      return {
+        name: url.pathname.split('/').pop() || 'file',
+        type: 'application/octet-stream',
+        url: file,
+      };
+    } catch (error) {
+      throw new Error('Invalid file URL format');
+    }
+  }
+};
+
+// Create asset in Screenly
 const uploadAsset = {
   key: 'upload_asset',
   noun: 'Asset',
   display: {
     label: 'Upload Asset',
-    description: 'Upload a new asset to Screenly',
+    description: 'Uploads a new asset to Screenly.',
   },
   operation: {
     inputFields: [
@@ -38,583 +252,185 @@ const uploadAsset = {
         label: 'File URL',
         type: 'string',
         required: true,
-        helpText: 'The URL of the file to upload',
+        helpText: 'URL of the file to upload. Supports direct URLs, Google Drive, Box, and Dropbox links.',
       },
       {
         key: 'title',
         label: 'Title',
         type: 'string',
         required: true,
-        helpText: 'Title of the asset',
+        helpText: 'Title of the asset.',
       },
       {
         key: 'duration',
         label: 'Duration (seconds)',
         type: 'integer',
-        required: false,
-        default: '10',
-        helpText: 'How long should the asset be shown (in seconds)',
-      },
-    ],
-    perform: async (z, bundle) => {
-      // First, fetch the file
-      const fileResponse = await z.request({
-        url: bundle.inputData.file,
-        raw: true,
-      });
-
-      if (fileResponse.status >= 400) {
-        throw new Error(`Failed to fetch file: ${fileResponse.status}`);
-      }
-
-      // Create form data
-      const formData = new FormData();
-      formData.append('title', bundle.inputData.title);
-      formData.append('duration', bundle.inputData.duration || 10);
-      formData.append('file', fileResponse.body, 'asset');
-
-      const response = await z.request({
-        url: 'https://api.screenlyapp.com/api/v4/assets/',
-        method: 'POST',
-        headers: {
-          Authorization: `Token ${bundle.authData.api_key}`,
-        },
-        body: formData,
-      });
-
-      return utils.handleError(response, 'Failed to upload asset');
-    },
-    sample: {
-      id: 1,
-      title: 'Sample Asset',
-      duration: 10,
-      type: 'image',
-      url: 'https://example.com/sample.jpg',
-    },
-  },
-};
-
-// Schedule Playlist Item Action
-const schedulePlaylistItem = {
-  key: 'schedule_playlist_item',
-  noun: 'Playlist Item',
-  display: {
-    label: 'Add Asset to Playlist',
-    description: 'Add an asset to a playlist with scheduling',
-  },
-  operation: {
-    inputFields: [
-      {
-        key: 'playlist_id',
-        label: 'Playlist',
-        type: 'string',
         required: true,
-        dynamic: 'get_playlists.id.name',
-        helpText: 'Select the playlist',
-      },
-      {
-        key: 'asset_id',
-        label: 'Asset',
-        type: 'string',
-        required: true,
-        dynamic: 'get_assets.id.title',
-        helpText: 'Select the asset to schedule',
-      },
-      {
-        key: 'duration',
-        label: 'Duration (seconds)',
-        type: 'integer',
-        required: false,
         default: '10',
-        helpText: 'How long should this asset be shown (in seconds)',
+        helpText: 'How long the asset should be displayed in seconds.',
       },
       {
         key: 'start_date',
         label: 'Start Date',
         type: 'datetime',
         required: false,
-        helpText: 'When should this item start being available for playback (optional)',
+        helpText: 'When the asset should start being displayed. Defaults to immediately.',
       },
       {
         key: 'end_date',
         label: 'End Date',
         type: 'datetime',
         required: false,
-        helpText: 'When should this item stop being available (optional)',
+        helpText: 'When the asset should stop being displayed. Defaults to never.',
       },
+      {
+        key: 'is_enabled',
+        label: 'Enable Asset',
+        type: 'boolean',
+        required: false,
+        default: 'true',
+        helpText: 'Whether the asset should be enabled immediately after upload.',
+      },
+      {
+        key: 'skip_asset_validation',
+        label: 'Skip Asset Validation',
+        type: 'boolean',
+        required: false,
+        default: 'false',
+        helpText: 'Skip asset validation (use with caution).',
+      }
     ],
     perform: async (z, bundle) => {
-      // First, update the asset duration if specified
-      if (bundle.inputData.duration) {
-        const assetResponse = await z.request({
-          url: `https://api.screenlyapp.com/api/v4/assets/${bundle.inputData.asset_id}/`,
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Token ${bundle.authData.api_key}`,
-          },
-          body: {
-            duration: parseInt(bundle.inputData.duration, 10),
-          },
-        });
+      try {
+        // Validate input
+        utils.validateAssetInput(bundle.inputData);
 
-        if (assetResponse.status >= 400) {
-          throw new Error(`Failed to update asset duration: ${assetResponse.content}`);
+        // Get the download URL for the file
+        const fileInfo = await fileUtils.getDownloadUrl(z, bundle);
+        z.console.log('File info:', fileInfo);
+
+        // Create form data for the upload
+        const formData = new FormData();
+        formData.append('title', bundle.inputData.title);
+        formData.append('duration', bundle.inputData.duration);
+        formData.append('file_url', fileInfo.url);
+        if (fileInfo.type !== 'application/octet-stream') {
+          formData.append('mime_type', fileInfo.type);
         }
-      }
 
-      // Build the conditions object
-      const conditions = {};
-      if (bundle.inputData.start_date) {
-        conditions.start_date = bundle.inputData.start_date;
-      }
-      if (bundle.inputData.end_date) {
-        conditions.end_date = bundle.inputData.end_date;
-      }
+        // Add optional fields if provided
+        if (bundle.inputData.start_date) {
+          formData.append('start_date', bundle.inputData.start_date);
+        }
+        if (bundle.inputData.end_date) {
+          formData.append('end_date', bundle.inputData.end_date);
+        }
+        if (bundle.inputData.is_enabled !== undefined) {
+          formData.append('is_enabled', bundle.inputData.is_enabled);
+        }
+        if (bundle.inputData.skip_asset_validation !== undefined) {
+          formData.append('skip_asset_validation', bundle.inputData.skip_asset_validation);
+        }
 
-      const payload = {
-        asset: bundle.inputData.asset_id,
-        playlist: bundle.inputData.playlist_id,
-      };
-
-      // Only add conditions if they are specified
-      if (Object.keys(conditions).length > 0) {
-        payload.conditions = conditions;
-      }
-
-      const response = await z.request({
-        url: 'https://api.screenlyapp.com/api/v4/playlist-items/',
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Token ${bundle.authData.api_key}`,
-        },
-        body: payload,
-      });
-
-      if (response.status >= 400) {
-        throw new Error(`Failed to add asset to playlist: ${response.content}`);
-      }
-
-      return response.json;
-    },
-    sample: {
-      id: 1,
-      asset: 1,
-      playlist: 1,
-      conditions: {
-        start_date: '2024-01-01T00:00:00Z',
-        end_date: '2024-12-31T23:59:59Z',
-      },
-    },
-  },
-};
-
-// Assign Screen to Playlist Action
-const assignScreenToPlaylist = {
-  key: 'assign_screen_to_playlist',
-  noun: 'Screen Assignment',
-  display: {
-    label: 'Assign Screen to Playlist',
-    description: 'Assign a screen to play a specific playlist',
-  },
-  operation: {
-    inputFields: [
-      {
-        key: 'screen_id',
-        label: 'Screen',
-        type: 'string',
-        required: true,
-        dynamic: 'get_screens.id.name',
-        helpText: 'Select the screen to assign',
-      },
-      {
-        key: 'playlist_id',
-        label: 'Playlist',
-        type: 'string',
-        required: true,
-        dynamic: 'get_playlists.id.name',
-        helpText: 'Select the playlist to assign to the screen',
-      },
-    ],
-    perform: async (z, bundle) => {
-      const response = await z.request({
-        url: `https://api.screenlyapp.com/api/v4/screens/${bundle.inputData.screen_id}/`,
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Token ${bundle.authData.api_key}`,
-        },
-        body: {
-          playlist: bundle.inputData.playlist_id,
-        },
-      });
-
-      if (response.status >= 400) {
-        throw new Error(`Failed to assign screen to playlist: ${response.content}`);
-      }
-
-      return response.json;
-    },
-    sample: {
-      id: 1,
-      name: 'Sample Screen',
-      playlist: 1,
-    },
-  },
-};
-
-// Get Screens Trigger
-const getScreens = {
-  key: 'get_screens',
-  noun: 'Screen',
-  display: {
-    label: 'Get Screens',
-    description: 'Triggers when listing available Screenly screens.',
-  },
-  operation: {
-    perform: async (z, bundle) => {
-      const response = await z.request({
-        url: 'https://api.screenlyapp.com/api/v4/screens/',
-        headers: {
-          Authorization: `Token ${bundle.authData.api_key}`,
-        },
-      });
-
-      return utils.handleError(response, 'Failed to fetch screens');
-    },
-    sample: {
-      id: 1,
-      name: 'Sample Screen',
-      description: 'A sample screen',
-      playlist: 1,
-    },
-  },
-};
-
-// Get Playlists Trigger
-const getPlaylists = {
-  key: 'get_playlists',
-  noun: 'Playlist',
-  display: {
-    label: 'Get Playlists',
-    description: 'Triggers when listing available Screenly playlists.',
-  },
-  operation: {
-    perform: async (z, bundle) => {
-      const response = await z.request({
-        url: 'https://api.screenlyapp.com/api/v4/playlists/',
-        headers: {
-          Authorization: `Token ${bundle.authData.api_key}`,
-        },
-      });
-
-      return utils.handleError(response, 'Failed to fetch playlists');
-    },
-    sample: {
-      id: 1,
-      name: 'Sample Playlist',
-      description: 'A sample playlist',
-      items_count: 5,
-    },
-  },
-};
-
-// Get Assets Trigger
-const getAssets = {
-  key: 'get_assets',
-  noun: 'Asset',
-  display: {
-    label: 'Get Assets',
-    description: 'Triggers when listing available Screenly assets.',
-  },
-  operation: {
-    perform: async (z, bundle) => {
-      const response = await z.request({
-        url: 'https://api.screenlyapp.com/api/v4/assets/',
-        headers: {
-          Authorization: `Token ${bundle.authData.api_key}`,
-        },
-      });
-
-      return utils.handleError(response, 'Failed to fetch assets');
-    },
-    sample: {
-      id: 1,
-      title: 'Sample Asset',
-      type: 'image',
-      duration: 10,
-      url: 'https://example.com/sample.jpg',
-    },
-  },
-};
-
-// Helper to tag resources created by Zapier
-const ZAPIER_TAG = 'created_by_zapier';
-
-// Complete Workflow Action
-const completeWorkflow = {
-  key: 'complete_workflow',
-  noun: 'Workflow',
-  display: {
-    label: 'Complete Workflow',
-    description: 'Upload asset, create/select playlist, and assign to screen',
-  },
-  operation: {
-    inputFields: [
-      {
-        key: 'file',
-        label: 'File URL',
-        type: 'string',
-        required: true,
-        helpText: 'The URL of the file to upload',
-      },
-      {
-        key: 'title',
-        label: 'Asset Title',
-        type: 'string',
-        required: true,
-        helpText: 'Title of the asset',
-      },
-      {
-        key: 'duration',
-        label: 'Duration (seconds)',
-        type: 'integer',
-        required: false,
-        default: '10',
-        helpText: 'How long should the asset be shown (in seconds)',
-      },
-      {
-        key: 'playlist_id',
-        label: 'Existing Playlist',
-        type: 'string',
-        required: false,
-        dynamic: 'get_playlists.id.name',
-        helpText: 'Select an existing playlist or create a new one',
-      },
-      {
-        key: 'new_playlist_name',
-        label: 'New Playlist Name',
-        type: 'string',
-        required: false,
-        helpText: 'Name for the new playlist (if not using existing)',
-      },
-      {
-        key: 'screen_id',
-        label: 'Screen',
-        type: 'string',
-        required: true,
-        dynamic: 'get_screens.id.name',
-        helpText: 'Select the screen to assign',
-      },
-    ],
-    perform: async (z, bundle) => {
-      // Validate playlist information
-      if (!bundle.inputData.playlist_id && !bundle.inputData.new_playlist_name) {
-        throw new Error('Either select an existing playlist or provide a name for a new one');
-      }
-
-      // Step 1: Upload the asset
-      const formData = new FormData();
-      formData.append('title', bundle.inputData.title);
-      formData.append('duration', bundle.inputData.duration || 10);
-      formData.append('tags', ZAPIER_TAG); // Tag the asset
-
-      const fileResponse = await z.request({
-        url: bundle.inputData.file,
-        raw: true,
-      });
-      if (fileResponse.status >= 400) {
-        throw new Error(`Failed to fetch file: ${fileResponse.status}`);
-      }
-
-      formData.append('file', fileResponse.body, 'asset');
-
-      const assetResponse = await z.request({
-        url: 'https://api.screenlyapp.com/api/v4/assets/',
-        method: 'POST',
-        headers: {
-          Authorization: `Token ${bundle.authData.api_key}`,
-        },
-        body: formData,
-      });
-
-      const asset = utils.handleError(assetResponse, 'Failed to upload asset');
-
-      // Step 2: Get or create playlist
-      let playlistId = bundle.inputData.playlist_id;
-
-      if (!playlistId) {
-        // Create new playlist
-        const playlistResponse = await z.request({
-          url: 'https://api.screenlyapp.com/api/v4/playlists/',
+        // Upload the asset to Screenly
+        const response = await utils.makeRequest(z, 'https://api.screenlyapp.com/api/v4/assets/', {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json',
             Authorization: `Token ${bundle.authData.api_key}`,
+            ...formData.getHeaders(),
           },
-          body: {
-            name: bundle.inputData.new_playlist_name,
-            tags: [ZAPIER_TAG],
-          },
+          body: formData,
         });
 
-        const playlist = utils.handleError(playlistResponse, 'Failed to create playlist');
-        playlistId = playlist.id;
+        return response.json;
+      } catch (error) {
+        z.console.error('Asset upload failed:', error);
+        throw error;
       }
-
-      // Step 3: Add asset to playlist
-      const playlistItemResponse = await z.request({
-        url: 'https://api.screenlyapp.com/api/v4/playlist-items/',
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Token ${bundle.authData.api_key}`,
-        },
-        body: {
-          asset: asset.id,
-          playlist: playlistId,
-        },
-      });
-
-      utils.handleError(playlistItemResponse, 'Failed to add asset to playlist');
-
-      // Step 4: Assign playlist to screen
-      const screenResponse = await z.request({
-        url: `https://api.screenlyapp.com/api/v4/screens/${bundle.inputData.screen_id}/`,
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Token ${bundle.authData.api_key}`,
-        },
-        body: {
-          playlist: playlistId,
-        },
-      });
-
-      utils.handleError(screenResponse, 'Failed to assign playlist to screen');
-
-      return {
-        asset: asset,
-        playlist_id: playlistId,
-        screen_id: bundle.inputData.screen_id,
-      };
-    },
-    sample: {
-      asset_id: 1,
-      playlist_id: 1,
-      screen_id: 1,
-      message: 'Successfully set up complete workflow',
     },
   },
 };
 
-// Cleanup Action
-const cleanupZapierContent = {
-  key: 'cleanup_zapier_content',
-  noun: 'Cleanup',
+// List assets
+const listAssets = {
+  key: 'list_assets',
+  noun: 'Asset',
   display: {
-    label: 'Cleanup Zapier Content',
-    description: 'Remove all content created by Zapier',
+    label: 'List Assets',
+    description: 'Lists all assets in your Screenly account.',
+  },
+  operation: {
+    perform: async (z, bundle) => {
+      try {
+        const response = await utils.makeRequest(z, 'https://api.screenlyapp.com/api/v4/assets/', {
+          headers: {
+            Authorization: `Token ${bundle.authData.api_key}`,
+          },
+        });
+        return response.json.assets;
+      } catch (error) {
+        z.console.error('Failed to list assets:', error);
+        throw error;
+      }
+    },
+    sample: {
+      id: 'asset-123',
+      title: 'Sample Asset',
+      duration: 10,
+      mime_type: 'image/jpeg',
+      url: 'https://example.com/image.jpg',
+      is_enabled: true,
+      start_date: null,
+      end_date: null,
+    },
+  },
+};
+
+// Delete asset
+const deleteAsset = {
+  key: 'delete_asset',
+  noun: 'Asset',
+  display: {
+    label: 'Delete Asset',
+    description: 'Deletes an asset from your Screenly account.',
   },
   operation: {
     inputFields: [
       {
-        key: 'confirm',
-        label: 'Confirm Cleanup',
-        type: 'boolean',
+        key: 'asset_id',
+        label: 'Asset ID',
+        type: 'string',
         required: true,
-        helpText: 'Are you sure you want to remove all content created by Zapier?',
+        helpText: 'The ID of the asset to delete.',
       },
     ],
     perform: async (z, bundle) => {
-      if (!bundle.inputData.confirm) {
-        throw new Error('Please confirm the cleanup operation');
-      }
-
-      // Step 1: Get all Zapier-created assets
-      const assetsResponse = await z.request({
-        url: 'https://api.screenlyapp.com/api/v4/assets/',
-        method: 'GET',
-        headers: {
-          Authorization: `Token ${bundle.authData.api_key}`,
-        },
-      });
-
-      const assets = utils
-        .handleError(assetsResponse, 'Failed to fetch assets')
-        .filter((asset) => asset.tags.includes(ZAPIER_TAG));
-
-      // Step 2: Get all Zapier-created playlists
-      const playlistsResponse = await z.request({
-        url: 'https://api.screenlyapp.com/api/v4/playlists/',
-        method: 'GET',
-        headers: {
-          Authorization: `Token ${bundle.authData.api_key}`,
-        },
-      });
-
-      const playlists = utils
-        .handleError(playlistsResponse, 'Failed to fetch playlists')
-        .filter((playlist) => playlist.tags && playlist.tags.includes(ZAPIER_TAG));
-
-      // Step 3: Delete assets
-      for (const asset of assets) {
-        await z.request({
-          url: `https://api.screenlyapp.com/api/v4/assets/${asset.id}/`,
+      try {
+        await utils.makeRequest(z, `https://api.screenlyapp.com/api/v4/assets/${bundle.inputData.asset_id}/`, {
           method: 'DELETE',
           headers: {
             Authorization: `Token ${bundle.authData.api_key}`,
           },
         });
+        return { id: bundle.inputData.asset_id, deleted: true };
+      } catch (error) {
+        z.console.error('Failed to delete asset:', error);
+        throw error;
       }
-
-      // Step 4: Delete playlists
-      for (const playlist of playlists) {
-        await z.request({
-          url: `https://api.screenlyapp.com/api/v4/playlists/${playlist.id}/`,
-          method: 'DELETE',
-          headers: {
-            Authorization: `Token ${bundle.authData.api_key}`,
-          },
-        });
-      }
-
-      return {
-        playlists_removed: playlists.length,
-        assets_removed: assets.length,
-      };
-    },
-    sample: {
-      assets_removed: 1,
-      playlists_removed: 1,
-      message: 'Successfully cleaned up Zapier content',
     },
   },
 };
 
-// Export the app definition
 module.exports = {
   version: require('./package.json').version,
   platformVersion: require('zapier-platform-core').version,
-
   authentication,
-
+  fileUtils,
   triggers: {
-    [getScreens.key]: getScreens,
-    [getPlaylists.key]: getPlaylists,
-    [getAssets.key]: getAssets,
+    [listAssets.key]: listAssets,
   },
-
   creates: {
     [uploadAsset.key]: uploadAsset,
-    [schedulePlaylistItem.key]: schedulePlaylistItem,
-    [assignScreenToPlaylist.key]: assignScreenToPlaylist,
-    [completeWorkflow.key]: completeWorkflow,
-    [cleanupZapierContent.key]: cleanupZapierContent,
+    [deleteAsset.key]: deleteAsset,
   },
-
-  searches: {},
-
-  resources: {},
 };

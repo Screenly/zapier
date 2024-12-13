@@ -1,584 +1,517 @@
-const zapier = require('zapier-platform-core');
-const App = require('../index');
-const utils = require('../utils');
 const nock = require('nock');
+const { authentication, fileUtils } = require('../index');
+const utils = require('../utils');
 
-const TEST_API_KEY = 'valid-api-key';
+// Mock API key for testing
+const TEST_API_KEY = 'test-key-123';
+const TEST_GOOGLE_TOKEN = 'google-token-123';
+const TEST_BOX_TOKEN = 'box-token-123';
+const TEST_DROPBOX_TOKEN = 'dropbox-token-123';
 
-// Create a new version of the app for testing
-const appTester = zapier.createAppTester(App);
+// Debug logging
+const debugLog = (...args) => console.log('[TEST]', ...args);
 
-// Mock the environment variables
-process.env.BASE_URL = 'https://api.screenlyapp.com';
-zapier.tools.env.inject();
+describe('Screenly Integration Tests', () => {
+  beforeAll(() => {
+    // Enable nock debug logging
+    nock.disableNetConnect();
+    nock.enableNetConnect('127.0.0.1');
+  });
 
-describe('Authentication', () => {
+  afterAll(() => {
+    nock.cleanAll();
+    nock.enableNetConnect();
+  });
+
   beforeEach(() => {
     nock.cleanAll();
+    jest.clearAllMocks();
   });
 
-  test('succeeds with valid API key', async () => {
-    const bundle = {
-      authData: {
-        api_key: TEST_API_KEY,
-      },
-    };
+  describe('Authentication', () => {
+    test('successfully authenticates with valid API key', async () => {
+      const z = {
+        request: jest.fn().mockResolvedValue({
+          status: 200,
+          json: { assets: [] },
+          headers: new Map([['content-type', 'application/json']])
+        }),
+        console: { log: debugLog }
+      };
 
-    nock('https://api.screenlyapp.com')
-      .get('/api/v4/assets/')
-      .matchHeader('Authorization', `Token ${TEST_API_KEY}`)
-      .reply(200, []);
+      const bundle = {
+        authData: { api_key: TEST_API_KEY }
+      };
 
-    const response = await appTester(App.authentication.test, bundle);
-    expect(Array.isArray(response)).toBe(true);
+      nock('https://api.screenlyapp.com')
+        .get('/api/v4/assets/')
+        .query({ limit: 1 })
+        .reply(200, { assets: [] });
+
+      const result = await authentication.test(z, bundle);
+      expect(result).toBeDefined();
+      expect(result.assets).toEqual([]);
+    });
+
+    test('handles authentication failure', async () => {
+      const z = {
+        request: jest.fn().mockImplementation(() => {
+          const error = new Error('Authentication failed: Invalid API key');
+          error.status = 401;
+          error.json = { error: 'Invalid API key' };
+          throw error;
+        }),
+        console: { log: debugLog }
+      };
+
+      const bundle = {
+        authData: { api_key: 'invalid-key' }
+      };
+
+      nock('https://api.screenlyapp.com')
+        .get('/api/v4/assets/')
+        .query({ limit: 1 })
+        .reply(401, { error: 'Invalid API key' });
+
+      await expect(authentication.test(z, bundle))
+        .rejects
+        .toThrow('Authentication failed: Invalid API key');
+    });
+
+    test('handles network errors during authentication', async () => {
+      const z = {
+        request: jest.fn().mockRejectedValue({
+          code: 'ECONNREFUSED',
+          message: 'Connection refused'
+        }),
+        console: { log: debugLog }
+      };
+
+      const bundle = {
+        authData: { api_key: TEST_API_KEY }
+      };
+
+      nock('https://api.screenlyapp.com')
+        .get('/api/v4/assets/')
+        .replyWithError({ code: 'ECONNREFUSED' });
+
+      await expect(authentication.test(z, bundle))
+        .rejects
+        .toThrow('Network error: Unable to connect to the server');
+    });
   });
 
-  test('fails with invalid API key', async () => {
-    const bundle = {
-      authData: {
-        api_key: 'invalid-api-key',
-      },
-    };
+  describe('File Handling', () => {
+    test('validates Google Drive file URL and gets download URL', async () => {
+      const z = {
+        request: jest.fn().mockResolvedValue({
+          status: 200,
+          json: {
+            name: 'test.jpg',
+            mimeType: 'image/jpeg',
+            webContentLink: 'https://drive.google.com/uc?id=123abc'
+          },
+          headers: new Map([['content-type', 'application/json']])
+        }),
+        console: { log: debugLog }
+      };
 
-    nock('https://api.screenlyapp.com')
-      .get('/api/v4/assets/')
-      .matchHeader('Authorization', 'Token invalid-api-key')
-      .reply(401, { detail: 'Invalid token' });
-
-    await expect(appTester(App.authentication.test, bundle)).rejects.toThrow();
-  });
-});
-
-describe('Upload Asset', () => {
-  beforeEach(() => {
-    nock.cleanAll();
-  });
-
-  test('successfully uploads an asset', async () => {
-    const bundle = {
-      authData: {
-        api_key: TEST_API_KEY,
-      },
-      inputData: {
-        file: 'https://example.com/image.jpg',
-        title: 'Test Image',
-        duration: 10,
-      },
-    };
-
-    // Mock the file download
-    nock('https://example.com').get('/image.jpg').reply(200, 'fake-file-content');
-
-    // Mock the asset upload
-    nock('https://api.screenlyapp.com')
-      .post('/api/v4/assets/')
-      .matchHeader('Authorization', `Token ${TEST_API_KEY}`)
-      .reply(201, {
-        id: 'asset-123',
-        title: 'Test Image',
-        duration: 10,
-      });
-
-    const response = await appTester(App.creates.upload_asset.operation.perform, bundle);
-    expect(response.id).toBe('asset-123');
-    expect(response.title).toBe('Test Image');
-    expect(response.duration).toBe(10);
-  });
-
-  test('handles upload failure', async () => {
-    const bundle = {
-      authData: {
-        api_key: TEST_API_KEY,
-      },
-      inputData: {
-        file: 'https://example.com/image.jpg',
-        title: 'Test Image',
-        duration: 10,
-      },
-    };
-
-    nock('https://example.com').get('/image.jpg').reply(404);
-
-    await expect(appTester(App.creates.upload_asset.operation.perform, bundle)).rejects.toThrow();
-  });
-});
-
-describe('Schedule Playlist Item', () => {
-  beforeEach(() => {
-    nock.cleanAll();
-  });
-
-  test('successfully adds asset to playlist without conditions', async () => {
-    const bundle = {
-      authData: {
-        api_key: TEST_API_KEY,
-      },
-      inputData: {
-        playlist_id: 'playlist-123',
-        asset_id: 'asset-123',
-        duration: 15,
-      },
-    };
-
-    // Mock the asset duration update
-    nock('https://api.screenlyapp.com')
-      .patch('/api/v4/assets/asset-123/', {
-        duration: 15,
-      })
-      .matchHeader('Authorization', `Token ${TEST_API_KEY}`)
-      .reply(200, {
-        id: 'asset-123',
-        duration: 15,
-      });
-
-    // Mock the playlist item creation
-    nock('https://api.screenlyapp.com')
-      .post('/api/v4/playlist-items/', {
-        asset: 'asset-123',
-        playlist: 'playlist-123',
-      })
-      .matchHeader('Authorization', `Token ${TEST_API_KEY}`)
-      .reply(201, {
-        id: 'item-123',
-        playlist: 'playlist-123',
-        asset: 'asset-123',
-      });
-
-    const response = await appTester(App.creates.schedule_playlist_item.operation.perform, bundle);
-    expect(response.id).toBe('item-123');
-    expect(response.playlist).toBe('playlist-123');
-    expect(response.asset).toBe('asset-123');
-  });
-
-  test('successfully adds asset with scheduling', async () => {
-    const bundle = {
-      authData: {
-        api_key: TEST_API_KEY,
-      },
-      inputData: {
-        playlist_id: 'playlist-123',
-        asset_id: 'asset-123',
-        duration: 20,
-        start_date: '2023-12-01T00:00:00Z',
-        end_date: '2023-12-31T23:59:59Z',
-      },
-    };
-
-    // Mock the asset duration update
-    nock('https://api.screenlyapp.com')
-      .patch('/api/v4/assets/asset-123/', {
-        duration: 20,
-      })
-      .matchHeader('Authorization', `Token ${TEST_API_KEY}`)
-      .reply(200, {
-        id: 'asset-123',
-        duration: 20,
-      });
-
-    // Mock the playlist item creation
-    nock('https://api.screenlyapp.com')
-      .post('/api/v4/playlist-items/', {
-        asset: 'asset-123',
-        playlist: 'playlist-123',
-        conditions: {
-          start_date: '2023-12-01T00:00:00Z',
-          end_date: '2023-12-31T23:59:59Z',
+      const bundle = {
+        inputData: {
+          file: 'https://drive.google.com/file/d/123abc/view'
         },
-      })
-      .matchHeader('Authorization', `Token ${TEST_API_KEY}`)
-      .reply(201, {
-        id: 'item-123',
-        playlist: 'playlist-123',
-        asset: 'asset-123',
-        conditions: {
-          start_date: '2023-12-01T00:00:00Z',
-          end_date: '2023-12-31T23:59:59Z',
+        authData: {
+          api_key: TEST_API_KEY,
+          google_access_token: TEST_GOOGLE_TOKEN
+        }
+      };
+
+      nock('https://www.googleapis.com')
+        .get('/drive/v3/files/123abc')
+        .query({ fields: 'name,mimeType,webContentLink' })
+        .reply(200, {
+          name: 'test.jpg',
+          mimeType: 'image/jpeg',
+          webContentLink: 'https://drive.google.com/uc?id=123abc'
+        });
+
+      const result = await fileUtils.getDownloadUrl(z, bundle);
+      expect(result.type).toBe('image/jpeg');
+      expect(result.url).toBeDefined();
+    });
+
+    test('validates Box file URL and gets download URL', async () => {
+      const z = {
+        request: jest.fn().mockImplementation(async (options) => {
+          if (options.url.includes('/content')) {
+            return {
+              status: 302,
+              headers: new Map([['location', 'https://dl.box.com/123456.pdf']])
+            };
+          }
+          return {
+            status: 200,
+            json: {
+              name: 'test.pdf',
+              type: 'application/pdf'
+            },
+            headers: new Map([['content-type', 'application/json']])
+          };
+        }),
+        console: { log: debugLog }
+      };
+
+      const bundle = {
+        inputData: {
+          file: 'https://app.box.com/s/123456'
         },
-      });
+        authData: {
+          api_key: TEST_API_KEY,
+          box_access_token: TEST_BOX_TOKEN
+        }
+      };
 
-    const response = await appTester(App.creates.schedule_playlist_item.operation.perform, bundle);
-    expect(response.id).toBe('item-123');
-    expect(response.conditions.start_date).toBe('2023-12-01T00:00:00Z');
-    expect(response.conditions.end_date).toBe('2023-12-31T23:59:59Z');
-  });
+      nock('https://api.box.com')
+        .get('/2.0/files/123456')
+        .reply(200, {
+          name: 'test.pdf',
+          type: 'application/pdf'
+        });
 
-  test('handles duration update failure', async () => {
-    const bundle = {
-      authData: { api_key: TEST_API_KEY },
-      inputData: {
-        asset_id: 'asset-123',
-        playlist_id: 'playlist-123',
-        duration: -1,
-      },
-    };
+      nock('https://api.box.com')
+        .get('/2.0/files/123456/content')
+        .reply(302, '', {
+          location: 'https://dl.box.com/123456.pdf'
+        });
 
-    nock('https://api.screenlyapp.com')
-      .patch('/api/v4/assets/asset-123/', {
-        duration: -1,
-      })
-      .matchHeader('Authorization', `Token ${TEST_API_KEY}`)
-      .reply(400, { detail: 'Invalid duration' });
-
-    await expect(
-      appTester(App.creates.schedule_playlist_item.operation.perform, bundle)
-    ).rejects.toThrow();
-  });
-
-  test('handles playlist addition failure', async () => {
-    const bundle = {
-      authData: { api_key: TEST_API_KEY },
-      inputData: {
-        asset_id: 'asset-123',
-        playlist_id: 'playlist-123',
-      },
-    };
-
-    nock('https://api.screenlyapp.com')
-      .post('/api/v4/playlist-items/', {
-        asset: 'asset-123',
-        playlist: 'playlist-123',
-      })
-      .matchHeader('Authorization', `Token ${TEST_API_KEY}`)
-      .reply(404, { detail: 'Playlist not found' });
-
-    await expect(
-      appTester(App.creates.schedule_playlist_item.operation.perform, bundle)
-    ).rejects.toThrow();
-  });
-});
-
-describe('Helper Functions', () => {
-  test('makeRequest handles error response', async () => {
-    const z = {
-      request: jest.fn().mockResolvedValue({
-        status: 404,
-        json: { error: 'Not found' },
-      }),
-      authData: {
-        api_key: TEST_API_KEY,
-      },
-    };
-
-    await expect(utils.makeRequest(z, 'https://api.screenlyapp.com/api/v4/test/')).rejects.toThrow(
-      'Screenly API Error'
-    );
-  });
-
-  test('handleError returns json on success', async () => {
-    const response = {
-      status: 200,
-      json: { data: 'test' },
-    };
-
-    const result = utils.handleError(response, 'Error message');
-    expect(result).toEqual({ data: 'test' });
-  });
-
-  test('makeRequest includes custom headers', async () => {
-    const z = {
-      request: jest.fn().mockResolvedValue({
-        status: 200,
-        json: { data: 'test' },
-      }),
-      authData: {
-        api_key: TEST_API_KEY,
-      },
-    };
-
-    await utils.makeRequest(z, 'https://api.screenlyapp.com/api/v4/test/', {
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      const result = await fileUtils.getDownloadUrl(z, bundle);
+      expect(result.type).toBe('application/pdf');
+      expect(result.url).toBeDefined();
     });
 
-    expect(z.request).toHaveBeenCalledWith({
-      url: 'https://api.screenlyapp.com/api/v4/test/',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Token ${TEST_API_KEY}`,
-      },
-    });
-  });
-});
+    test('validates Dropbox file URL and gets download URL', async () => {
+      const z = {
+        request: jest.fn().mockImplementation(async (options) => {
+          if (options.url.includes('get_shared_link_file')) {
+            return {
+              status: 200,
+              headers: new Map([['location', 'https://dl.dropboxusercontent.com/abc123/file.mp4']])
+            };
+          }
+          return {
+            status: 200,
+            json: {
+              name: 'test.mp4',
+              link_metadata: {
+                mime_type: 'video/mp4'
+              }
+            },
+            headers: new Map([['content-type', 'application/json']])
+          };
+        }),
+        console: { log: debugLog }
+      };
 
-describe('Dynamic Dropdowns', () => {
-  beforeEach(() => {
-    nock.cleanAll();
-  });
+      const bundle = {
+        inputData: {
+          file: 'https://www.dropbox.com/s/abc123/file.mp4'
+        },
+        authData: {
+          api_key: TEST_API_KEY,
+          dropbox_access_token: TEST_DROPBOX_TOKEN
+        }
+      };
 
-  test('fetches playlists for dropdown', async () => {
-    const bundle = {
-      authData: {
-        api_key: TEST_API_KEY,
-      },
-    };
+      nock('https://api.dropboxapi.com')
+        .post('/2/sharing/get_shared_link_metadata')
+        .reply(200, {
+          name: 'test.mp4',
+          link_metadata: {
+            mime_type: 'video/mp4'
+          }
+        });
 
-    nock('https://api.screenlyapp.com')
-      .get('/api/v4/playlists/')
-      .matchHeader('Authorization', `Token ${TEST_API_KEY}`)
-      .reply(200, [
-        { id: 'playlist-1', name: 'Playlist 1' },
-        { id: 'playlist-2', name: 'Playlist 2' },
-      ]);
+      nock('https://api.dropboxapi.com')
+        .post('/2/sharing/get_shared_link_file')
+        .reply(200, '', {
+          location: 'https://dl.dropboxusercontent.com/abc123/file.mp4'
+        });
 
-    const response = await appTester(App.triggers.get_playlists.operation.perform, bundle);
-    expect(response).toHaveLength(2);
-    expect(response[0].id).toBe('playlist-1');
-    expect(response[1].name).toBe('Playlist 2');
-  });
-
-  test('fetches assets for dropdown', async () => {
-    const bundle = {
-      authData: {
-        api_key: TEST_API_KEY,
-      },
-    };
-
-    nock('https://api.screenlyapp.com')
-      .get('/api/v4/assets/')
-      .matchHeader('Authorization', `Token ${TEST_API_KEY}`)
-      .reply(200, [
-        { id: 'asset-1', title: 'Asset 1' },
-        { id: 'asset-2', title: 'Asset 2' },
-      ]);
-
-    const response = await appTester(App.triggers.get_assets.operation.perform, bundle);
-    expect(response).toHaveLength(2);
-    expect(response[0].id).toBe('asset-1');
-    expect(response[1].title).toBe('Asset 2');
-  });
-
-  test('fetches screens for dropdown', async () => {
-    const bundle = {
-      authData: {
-        api_key: TEST_API_KEY,
-      },
-    };
-
-    nock('https://api.screenlyapp.com')
-      .get('/api/v4/screens/')
-      .matchHeader('Authorization', `Token ${TEST_API_KEY}`)
-      .reply(200, [
-        { id: 'screen-1', name: 'Screen 1' },
-        { id: 'screen-2', name: 'Screen 2' },
-      ]);
-
-    const response = await appTester(App.triggers.get_screens.operation.perform, bundle);
-    expect(response).toHaveLength(2);
-    expect(response[0].id).toBe('screen-1');
-    expect(response[1].name).toBe('Screen 2');
-  });
-});
-
-describe('Complete Workflow', () => {
-  beforeEach(() => {
-    nock.cleanAll();
-  });
-
-  test('successfully sets up complete workflow with existing playlist', async () => {
-    const bundle = {
-      authData: { api_key: TEST_API_KEY },
-      inputData: {
-        file: 'https://example.com/test.jpg',
-        title: 'Test Asset',
-        playlist_id: 'playlist-123',
-        screen_id: 'screen-123',
-      },
-    };
-
-    nock('https://example.com').get('/test.jpg').reply(200, Buffer.from('fake-image-data'));
-
-    nock('https://api.screenlyapp.com').post('/api/v4/assets/').reply(201, {
-      id: 'asset-123',
-      title: 'Test Asset',
+      const result = await fileUtils.getDownloadUrl(z, bundle);
+      expect(result.type).toBe('video/mp4');
+      expect(result.url).toBeDefined();
     });
 
-    nock('https://api.screenlyapp.com')
-      .post('/api/v4/playlist-items/', {
-        asset: 'asset-123',
-        playlist: 'playlist-123',
-      })
-      .reply(201, {
-        id: 'item-123',
-      });
+    test('rejects unsupported file types', async () => {
+      const z = {
+        request: jest.fn().mockResolvedValue({
+          status: 200,
+          json: {
+            name: 'test.doc',
+            mimeType: 'application/msword',
+            webContentLink: 'https://drive.google.com/uc?id=123abc'
+          },
+          headers: new Map([['content-type', 'application/json']])
+        }),
+        console: { log: debugLog }
+      };
 
-    nock('https://api.screenlyapp.com')
-      .patch('/api/v4/screens/screen-123/', {
-        playlist: 'playlist-123',
-      })
-      .reply(200, {
-        id: 'screen-123',
-        playlist: 'playlist-123',
-      });
+      const bundle = {
+        inputData: {
+          file: 'https://drive.google.com/file/d/123abc/view'
+        },
+        authData: {
+          api_key: TEST_API_KEY,
+          google_access_token: TEST_GOOGLE_TOKEN
+        }
+      };
 
-    const response = await appTester(App.creates.complete_workflow.operation.perform, bundle);
-    expect(response.asset.id).toBe('asset-123');
-    expect(response.playlist_id).toBe('playlist-123');
-    expect(response.screen_id).toBe('screen-123');
-  });
+      nock('https://www.googleapis.com')
+        .get('/drive/v3/files/123abc')
+        .query({ fields: 'name,mimeType,webContentLink' })
+        .reply(200, {
+          name: 'test.doc',
+          mimeType: 'application/msword',
+          webContentLink: 'https://drive.google.com/uc?id=123abc'
+        });
 
-  test('successfully creates new playlist during workflow', async () => {
-    const bundle = {
-      authData: { api_key: TEST_API_KEY },
-      inputData: {
-        file: 'https://example.com/test.jpg',
-        title: 'Test Asset',
-        new_playlist_name: 'New Playlist',
-        screen_id: 'screen-123',
-      },
-    };
-
-    nock('https://example.com').get('/test.jpg').reply(200, Buffer.from('fake-image-data'));
-
-    nock('https://api.screenlyapp.com').post('/api/v4/assets/').reply(201, {
-      id: 'asset-123',
-      title: 'Test Asset',
+      await expect(fileUtils.getDownloadUrl(z, bundle))
+        .rejects
+        .toThrow('Invalid file type: application/msword');
     });
 
-    nock('https://api.screenlyapp.com')
-      .post('/api/v4/playlists/', {
-        name: 'New Playlist',
-        tags: ['created_by_zapier'],
-      })
-      .reply(201, {
-        id: 'playlist-123',
-        name: 'New Playlist',
-        tags: ['created_by_zapier'],
-      });
+    test('handles missing access tokens', async () => {
+      const testCases = [
+        {
+          file: 'https://drive.google.com/file/d/123abc/view',
+          error: 'Google Drive access token is required for Google Drive files'
+        },
+        {
+          file: 'https://app.box.com/s/123456',
+          error: 'Box access token is required for Box files'
+        },
+        {
+          file: 'https://www.dropbox.com/s/abc123/file.mp4',
+          error: 'Dropbox access token is required for Dropbox files'
+        }
+      ];
 
-    nock('https://api.screenlyapp.com')
-      .post('/api/v4/playlist-items/', {
-        asset: 'asset-123',
-        playlist: 'playlist-123',
-      })
-      .reply(201, {
-        id: 'item-123',
-      });
+      for (const testCase of testCases) {
+        const bundle = {
+          inputData: { file: testCase.file },
+          authData: { api_key: TEST_API_KEY }
+        };
 
-    nock('https://api.screenlyapp.com')
-      .patch('/api/v4/screens/screen-123/', {
-        playlist: 'playlist-123',
-      })
-      .reply(200, {
-        id: 'screen-123',
-        playlist: 'playlist-123',
-      });
+        const z = { console: { log: debugLog } };
 
-    const response = await appTester(App.creates.complete_workflow.operation.perform, bundle);
-    expect(response.asset.id).toBe('asset-123');
-    expect(response.playlist_id).toBe('playlist-123');
-    expect(response.screen_id).toBe('screen-123');
+        await expect(fileUtils.getDownloadUrl(z, bundle))
+          .rejects
+          .toThrow(testCase.error);
+      }
+    });
+
+    test('handles invalid file URLs', async () => {
+      const testCases = [
+        {
+          file: 'https://drive.google.com/invalid',
+          error: 'Invalid Google Drive URL format'
+        },
+        {
+          file: 'https://app.box.com/invalid',
+          error: 'Invalid Box URL format'
+        },
+        {
+          file: 'https://www.dropbox.com/invalid',
+          error: 'Invalid Dropbox URL format'
+        }
+      ];
+
+      for (const testCase of testCases) {
+        const bundle = {
+          inputData: { file: testCase.file },
+          authData: {
+            api_key: TEST_API_KEY,
+            google_access_token: TEST_GOOGLE_TOKEN,
+            box_access_token: TEST_BOX_TOKEN,
+            dropbox_access_token: TEST_DROPBOX_TOKEN
+          }
+        };
+
+        const z = { console: { log: debugLog } };
+
+        await expect(fileUtils.getDownloadUrl(z, bundle))
+          .rejects
+          .toThrow(testCase.error);
+      }
+    });
+
+    test('handles direct URLs', async () => {
+      const bundle = {
+        inputData: {
+          file: 'https://example.com/image.jpg'
+        },
+        authData: { api_key: TEST_API_KEY }
+      };
+
+      const z = { console: { log: debugLog } };
+
+      const result = await fileUtils.getDownloadUrl(z, bundle);
+      expect(result.type).toBe('application/octet-stream');
+      expect(result.url).toBe('https://example.com/image.jpg');
+    });
   });
 
-  test('handles missing playlist information', async () => {
-    const bundle = {
-      authData: { api_key: TEST_API_KEY },
-      inputData: {
-        file: 'https://example.com/test.jpg',
-        title: 'Test Asset',
-        screen_id: 'screen-123',
-      },
-    };
+  describe('Error Handling', () => {
+    test('handles rate limiting with retry', async () => {
+      const z = {
+        request: jest.fn()
+          .mockRejectedValueOnce({
+            status: 429,
+            json: { error: 'Rate limit exceeded' },
+            headers: new Map([['retry-after', '1']])
+          })
+          .mockResolvedValueOnce({
+            status: 200,
+            json: { assets: [] },
+            headers: new Map([['content-type', 'application/json']])
+          }),
+        console: { log: debugLog }
+      };
 
-    await expect(
-      appTester(App.creates.complete_workflow.operation.perform, bundle)
-    ).rejects.toThrow('Either select an existing playlist or provide a name for a new one');
-  });
-});
+      nock('https://api.screenlyapp.com')
+        .get('/api/v4/assets/')
+        .reply(429, { error: 'Rate limit exceeded' }, { 'retry-after': '1' })
+        .get('/api/v4/assets/')
+        .reply(200, { assets: [] });
 
-describe('Cleanup', () => {
-  beforeEach(() => {
-    nock.cleanAll();
-  });
+      const response = await utils.makeRequest(z, 'https://api.screenlyapp.com/api/v4/assets/');
+      expect(response.status).toBe(200);
+      expect(response.json.assets).toEqual([]);
+    });
 
-  test('successfully cleans up Zapier content', async () => {
-    const bundle = {
-      authData: {
-        api_key: TEST_API_KEY,
-      },
-      inputData: {
-        confirm: true,
-      },
-    };
+    test('handles network errors with retry', async () => {
+      const z = {
+        request: jest.fn()
+          .mockRejectedValueOnce({
+            code: 'ECONNREFUSED',
+            message: 'Connection refused'
+          })
+          .mockResolvedValueOnce({
+            status: 200,
+            json: { assets: [] },
+            headers: new Map([['content-type', 'application/json']])
+          }),
+        console: { log: debugLog }
+      };
 
-    // Mock assets list with some Zapier-created assets
-    nock('https://api.screenlyapp.com')
-      .get('/api/v4/assets/')
-      .matchHeader('Authorization', `Token ${TEST_API_KEY}`)
-      .reply(200, [
-        { id: 'asset-1', title: 'Asset 1', tags: ['created_by_zapier'] },
-        { id: 'asset-2', title: 'Asset 2', tags: [] },
-        { id: 'asset-3', title: 'Asset 3', tags: ['created_by_zapier'] },
-      ]);
+      nock('https://api.screenlyapp.com')
+        .get('/api/v4/assets/')
+        .replyWithError({ code: 'ECONNREFUSED' })
+        .get('/api/v4/assets/')
+        .reply(200, { assets: [] });
 
-    // Mock playlists list with some Zapier-created playlists
-    nock('https://api.screenlyapp.com')
-      .get('/api/v4/playlists/')
-      .matchHeader('Authorization', `Token ${TEST_API_KEY}`)
-      .reply(200, [
-        { id: 'playlist-1', name: 'Playlist 1', tags: ['created_by_zapier'] },
-        { id: 'playlist-2', name: 'Playlist 2', tags: [] },
-      ]);
+      const response = await utils.makeRequest(z, 'https://api.screenlyapp.com/api/v4/assets/');
+      expect(response.status).toBe(200);
+      expect(response.json.assets).toEqual([]);
+    });
 
-    // Mock playlist deletions
-    nock('https://api.screenlyapp.com')
-      .delete('/api/v4/playlists/playlist-1/')
-      .matchHeader('Authorization', `Token ${TEST_API_KEY}`)
-      .reply(204);
+    test('handles maximum retries exceeded', async () => {
+      const z = {
+        request: jest.fn().mockRejectedValue({
+          code: 'ECONNREFUSED',
+          message: 'Connection refused'
+        }),
+        console: { log: debugLog }
+      };
 
-    // Mock asset deletions
-    nock('https://api.screenlyapp.com')
-      .delete('/api/v4/assets/asset-1/')
-      .matchHeader('Authorization', `Token ${TEST_API_KEY}`)
-      .reply(204);
+      nock('https://api.screenlyapp.com')
+        .get('/api/v4/assets/')
+        .replyWithError({ code: 'ECONNREFUSED' })
+        .persist();
 
-    nock('https://api.screenlyapp.com')
-      .delete('/api/v4/assets/asset-3/')
-      .matchHeader('Authorization', `Token ${TEST_API_KEY}`)
-      .reply(204);
+      await expect(utils.makeRequest(z, 'https://api.screenlyapp.com/api/v4/assets/'))
+        .rejects
+        .toThrow('Network error: Unable to connect to the server');
+    });
 
-    const response = await appTester(App.creates.cleanup_zapier_content.operation.perform, bundle);
-    expect(response.playlists_removed).toBe(1);
-    expect(response.assets_removed).toBe(2);
-  });
+    test('handles various HTTP errors', async () => {
+      const testCases = [
+        {
+          status: 400,
+          error: { error: 'Bad request' },
+          expected: 'Bad request: Bad request'
+        },
+        {
+          status: 401,
+          error: { error: 'Unauthorized' },
+          expected: 'Authentication failed: Unauthorized'
+        },
+        {
+          status: 403,
+          error: { error: 'Forbidden' },
+          expected: 'Permission denied: Forbidden'
+        },
+        {
+          status: 404,
+          error: { error: 'Not found' },
+          expected: 'Resource not found: Not found'
+        },
+        {
+          status: 500,
+          error: { error: 'Server error' },
+          expected: 'Server error: Server error'
+        }
+      ];
 
-  test('requires confirmation', async () => {
-    const bundle = {
-      authData: { api_key: TEST_API_KEY },
-      inputData: {
-        confirm: false,
-      },
-    };
+      for (const testCase of testCases) {
+        const z = {
+          request: jest.fn().mockRejectedValue({
+            status: testCase.status,
+            json: testCase.error
+          }),
+          console: { log: debugLog }
+        };
 
-    await expect(
-      appTester(App.creates.cleanup_zapier_content.operation.perform, bundle)
-    ).rejects.toThrow('Please confirm the cleanup operation');
-  });
+        nock('https://api.screenlyapp.com')
+          .get('/api/v4/assets/')
+          .reply(testCase.status, testCase.error);
 
-  test('handles empty lists', async () => {
-    const bundle = {
-      authData: {
-        api_key: TEST_API_KEY,
-      },
-      inputData: {
-        confirm: true,
-      },
-    };
+        await expect(utils.makeRequest(z, 'https://api.screenlyapp.com/api/v4/assets/'))
+          .rejects
+          .toThrow(testCase.expected);
+      }
+    });
 
-    // Mock empty assets list
-    nock('https://api.screenlyapp.com')
-      .get('/api/v4/assets/')
-      .matchHeader('Authorization', `Token ${TEST_API_KEY}`)
-      .reply(200, []);
+    test('handles empty responses', async () => {
+      const z = {
+        request: jest.fn().mockResolvedValue(null),
+        console: { log: debugLog }
+      };
 
-    // Mock empty playlists list
-    nock('https://api.screenlyapp.com')
-      .get('/api/v4/playlists/')
-      .matchHeader('Authorization', `Token ${TEST_API_KEY}`)
-      .reply(200, []);
+      nock('https://api.screenlyapp.com')
+        .get('/api/v4/assets/')
+        .reply(200);
 
-    const response = await appTester(App.creates.cleanup_zapier_content.operation.perform, bundle);
-    expect(response.playlists_removed).toBe(0);
-    expect(response.assets_removed).toBe(0);
+      await expect(utils.makeRequest(z, 'https://api.screenlyapp.com/api/v4/assets/'))
+        .rejects
+        .toThrow('Empty response received');
+    });
+
+    test('handles missing response properties', async () => {
+      const z = {
+        request: jest.fn().mockResolvedValue({
+          status: 200
+        }),
+        console: { log: debugLog }
+      };
+
+      nock('https://api.screenlyapp.com')
+        .get('/api/v4/assets/')
+        .reply(200);
+
+      await expect(utils.makeRequest(z, 'https://api.screenlyapp.com/api/v4/assets/'))
+        .rejects
+        .toThrow('Empty response received');
+    });
   });
 });
