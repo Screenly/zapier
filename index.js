@@ -329,20 +329,26 @@ const uploadAsset = {
           formData.append('is_enabled', bundle.inputData.is_enabled);
         }
         if (bundle.inputData.skip_asset_validation !== undefined) {
-          formData.append('skip_asset_validation', bundle.inputData.skip_asset_validation);
+          formData.append('disable_verification', bundle.inputData.skip_asset_validation);
         }
 
         // Upload the asset to Screenly
+
         const response = await utils.makeRequest(z, 'https://api.screenlyapp.com/api/v4/assets/', {
           method: 'POST',
           headers: {
-            Authorization: `Token ${bundle.authData.api_key}`,
-            ...formData.getHeaders(),
+            'Authorization': `Token ${bundle.authData.api_key}`,
+            'Content-Type': `application/json`,
+            'Prefer': 'return=representation',
           },
-          body: formData,
+          body: {
+            'title': bundle.inputData.title,
+            'source_url': fileInfo.url,
+            'disable_verification': bundle.inputData.skip_asset_validation,
+          }
         });
 
-        return response.json;
+        return response.json[0];
       } catch (error) {
         z.console.error('Asset upload failed:', error);
         throw error;
@@ -425,7 +431,6 @@ module.exports = {
   version: require('./package.json').version,
   platformVersion: require('zapier-platform-core').version,
   authentication,
-  fileUtils,
   triggers: {
     [listAssets.key]: listAssets,
   },
