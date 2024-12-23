@@ -254,7 +254,8 @@ Control playlist visibility dynamically:
    ```
 
 3. Configure your Screenly API key:
-   - Get your API key from [Screenly Settings](https://app.screenlyapp.com/settings/api-keys)
+   - Get your API key from Screenly. For instructions on how to get your API key,
+     see this [guide](https://support.screenly.io/hc/en-us/articles/35897560148371-How-to-Generate-a-Screenly-API-Token).
    - When setting up the Zapier integration, you'll be prompted to enter this API key
 
 ### Available Scripts
