@@ -64,7 +64,13 @@ const uploadAsset = {
         },
       });
 
-      return utils.handleError(response, 'Failed to upload asset');
+      const assets = utils.handleError(response, 'Failed to upload asset');
+
+      if (assets.length === 0) {
+        throw new Error('No assets returned from the Screenly API');
+      }
+
+      return assets[0];
     },
     sample: {
       id: 1,

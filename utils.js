@@ -5,11 +5,7 @@ const handleError = (response, customMessage) => {
     throw new Error(customMessage);
   }
 
-  if (response.json.length === 0) {
-    throw new Error('No data returned from the Screenly API');
-  }
-
-  return response.json[0];
+  return response.json;
 };
 
 const makeRequest = async (z, url, options = {}) => {

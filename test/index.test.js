@@ -62,7 +62,6 @@ describe('Upload Asset', () => {
       inputData: {
         file: 'https://example.com/image.jpg',
         title: 'Test Image',
-        duration: 10,
       },
     };
 
@@ -73,16 +72,18 @@ describe('Upload Asset', () => {
     nock('https://api.screenlyapp.com')
       .post('/api/v4/assets/')
       .matchHeader('Authorization', `Token ${TEST_API_KEY}`)
-      .reply(201, {
-        id: 'asset-123',
-        title: 'Test Image',
-        duration: 10,
-      });
+      .reply(201, [
+        {
+          id: 'asset-123',
+          title: 'Test Image',
+          duration: null,
+        }
+      ]);
 
     const response = await appTester(App.creates.upload_asset.operation.perform, bundle);
     expect(response.id).toBe('asset-123');
     expect(response.title).toBe('Test Image');
-    expect(response.duration).toBe(10);
+    expect(response.duration).toBe(null);
   });
 
   test('handles upload failure', async () => {
