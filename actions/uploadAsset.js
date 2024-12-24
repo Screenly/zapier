@@ -1,4 +1,3 @@
-const FormData = require('form-data');
 const utils = require('../utils');
 
 const uploadAsset = {
