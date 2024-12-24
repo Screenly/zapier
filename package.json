@@ -15,7 +15,7 @@
     "deploy": "zapier push",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "prepare": "husky",
+    "prepare": "npx husky",
     "clean": "rimraf coverage __image_snapshots__",
     "build": "echo 'No build step needed'"
   },
