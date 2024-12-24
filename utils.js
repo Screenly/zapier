@@ -4,6 +4,7 @@ const handleError = (response, customMessage) => {
   if (response.status >= 400) {
     throw new Error(customMessage);
   }
+
   return response.json;
 };
 
