@@ -23,14 +23,6 @@ const uploadAsset = {
         required: true,
         helpText: 'Title of the asset',
       },
-      {
-        key: 'duration',
-        label: 'Duration (seconds)',
-        type: 'integer',
-        required: false,
-        default: '10',
-        helpText: 'How long should the asset be shown (in seconds)',
-      },
     ],
     perform: async (z, bundle) => {
       const response = await z.request({
