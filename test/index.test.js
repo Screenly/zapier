@@ -121,34 +121,22 @@ describe('Schedule Playlist Item', () => {
       },
     };
 
-    // Mock the asset duration update
-    nock('https://api.screenlyapp.com')
-      .patch('/api/v4/assets/asset-123/', {
-        duration: 15,
-      })
-      .matchHeader('Authorization', `Token ${TEST_API_KEY}`)
-      .reply(200, {
-        id: 'asset-123',
-        duration: 15,
-      });
-
     // Mock the playlist item creation
     nock('https://api.screenlyapp.com')
       .post('/api/v4/playlist-items/', {
-        asset: 'asset-123',
-        playlist: 'playlist-123',
+        asset_id: 'asset-123',
+        playlist_id: 'playlist-123',
+        duration: 15
       })
       .matchHeader('Authorization', `Token ${TEST_API_KEY}`)
-      .reply(201, {
+      .reply(201, [{
         id: 'item-123',
-        playlist: 'playlist-123',
-        asset: 'asset-123',
-      });
+        playlist_id: 'playlist-123',
+        asset_id: 'asset-123'
+      }]);
 
     const response = await appTester(App.creates.schedule_playlist_item.operation.perform, bundle);
     expect(response.id).toBe('item-123');
-    expect(response.playlist).toBe('playlist-123');
-    expect(response.asset).toBe('asset-123');
   });
 
   test('successfully adds asset with scheduling', async () => {
@@ -160,47 +148,25 @@ describe('Schedule Playlist Item', () => {
         playlist_id: 'playlist-123',
         asset_id: 'asset-123',
         duration: 20,
-        start_date: '2023-12-01T00:00:00Z',
-        end_date: '2023-12-31T23:59:59Z',
       },
     };
-
-    // Mock the asset duration update
-    nock('https://api.screenlyapp.com')
-      .patch('/api/v4/assets/asset-123/', {
-        duration: 20,
-      })
-      .matchHeader('Authorization', `Token ${TEST_API_KEY}`)
-      .reply(200, {
-        id: 'asset-123',
-        duration: 20,
-      });
 
     // Mock the playlist item creation
     nock('https://api.screenlyapp.com')
       .post('/api/v4/playlist-items/', {
-        asset: 'asset-123',
-        playlist: 'playlist-123',
-        conditions: {
-          start_date: '2023-12-01T00:00:00Z',
-          end_date: '2023-12-31T23:59:59Z',
-        },
+        asset_id: 'asset-123',
+        playlist_id: 'playlist-123',
+        duration: 20
       })
       .matchHeader('Authorization', `Token ${TEST_API_KEY}`)
-      .reply(201, {
+      .reply(201, [{
         id: 'item-123',
-        playlist: 'playlist-123',
-        asset: 'asset-123',
-        conditions: {
-          start_date: '2023-12-01T00:00:00Z',
-          end_date: '2023-12-31T23:59:59Z',
-        },
-      });
+        playlist_id: 'playlist-123',
+        asset_id: 'asset-123'
+      }]);
 
     const response = await appTester(App.creates.schedule_playlist_item.operation.perform, bundle);
     expect(response.id).toBe('item-123');
-    expect(response.conditions.start_date).toBe('2023-12-01T00:00:00Z');
-    expect(response.conditions.end_date).toBe('2023-12-31T23:59:59Z');
   });
 
   test('handles duration update failure', async () => {

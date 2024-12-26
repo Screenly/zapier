@@ -33,68 +33,39 @@ const schedulePlaylistItem = {
         default: '10',
         helpText: 'How long should this asset be shown (in seconds)',
       },
-      {
-        key: 'start_date',
-        label: 'Start Date',
-        type: 'datetime',
-        required: false,
-        helpText: 'When should this item start being available for playback (optional)',
-      },
-      {
-        key: 'end_date',
-        label: 'End Date',
-        type: 'datetime',
-        required: false,
-        helpText: 'When should this item stop being available (optional)',
-      },
     ],
     perform: async (z, bundle) => {
-      if (bundle.inputData.duration) {
-        const assetResponse = await z.request({
-          url: `https://api.screenlyapp.com/api/v4/assets/${bundle.inputData.asset_id}/`,
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Token ${bundle.authData.api_key}`,
-          },
-          body: {
-            duration: parseInt(bundle.inputData.duration, 10),
-          },
-        });
-
-        if (assetResponse.status >= 400) {
-          throw new Error(`Failed to update asset duration: ${assetResponse.content}`);
-        }
-      }
-
-      const conditions = {};
-      if (bundle.inputData.start_date) {
-        conditions.start_date = bundle.inputData.start_date;
-      }
-      if (bundle.inputData.end_date) {
-        conditions.end_date = bundle.inputData.end_date;
-      }
-
       const payload = {
-        asset: bundle.inputData.asset_id,
-        playlist: bundle.inputData.playlist_id,
+        asset_id: bundle.inputData.asset_id,
+        playlist_id: bundle.inputData.playlist_id,
       };
 
-      if (Object.keys(conditions).length > 0) {
-        payload.conditions = conditions;
+      if (bundle.inputData.duration) {
+        payload.duration = bundle.inputData.duration;
       }
+
+      // TODO: Do API calls until the state if either 'downloading',
+      // 'processing', 'finished'
+      await new Promise(resolve => setTimeout(resolve, 3000));
 
       const response = await z.request({
         url: 'https://api.screenlyapp.com/api/v4/playlist-items/',
         method: 'POST',
         headers: {
+          'Authorization': `Token ${bundle.authData.api_key}`,
           'Content-Type': 'application/json',
-          Authorization: `Token ${bundle.authData.api_key}`,
+          'Prefer': 'return=representation',
         },
         body: payload,
       });
 
-      return utils.handleError(response, 'Failed to add asset to playlist');
+      const assets = utils.handleError(response, 'Failed to add asset to playlist');
+
+      if (assets.length === 0) {
+        throw new Error('No assets returned from the Screenly API');
+      }
+
+      return assets[0];
     },
     sample: {
       id: 1,
