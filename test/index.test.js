@@ -121,6 +121,15 @@ describe('Schedule Playlist Item', () => {
       },
     };
 
+    // Mock the asset status check
+    nock('https://api.screenlyapp.com')
+      .get('/api/v4/assets?id=eq.asset-123')
+      .matchHeader('Authorization', `Token ${TEST_API_KEY}`)
+      .reply(200, [{
+        id: 'asset-123',
+        status: 'finished'
+      }]);
+
     // Mock the playlist item creation
     nock('https://api.screenlyapp.com')
       .post('/api/v4/playlist-items/', {
@@ -150,6 +159,15 @@ describe('Schedule Playlist Item', () => {
         duration: 20,
       },
     };
+
+    // Mock the asset status check
+    nock('https://api.screenlyapp.com')
+      .get('/api/v4/assets?id=eq.asset-123')
+      .matchHeader('Authorization', `Token ${TEST_API_KEY}`)
+      .reply(200, [{
+        id: 'asset-123',
+        status: 'finished'
+      }]);
 
     // Mock the playlist item creation
     nock('https://api.screenlyapp.com')

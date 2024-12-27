@@ -1,5 +1,8 @@
 const utils = require('../utils');
 
+// Terminal states that indicate the asset is ready
+const READY_STATES = ['downloading', 'processing', 'finished'];
+
 const schedulePlaylistItem = {
   key: 'schedule_playlist_item',
   noun: 'Playlist Item',
@@ -35,6 +38,25 @@ const schedulePlaylistItem = {
       },
     ],
     perform: async (z, bundle) => {
+      // Check asset status until ready
+      let assetStatus;
+      do {
+        const statusResponse = await z.request({
+          url: `https://api.screenlyapp.com/api/v4/assets?id=eq.${bundle.inputData.asset_id}`,
+          headers: {
+            Authorization: `Token ${bundle.authData.api_key}`,
+          },
+        });
+
+        const assets = utils.handleError(statusResponse, 'Failed to check asset status');
+        assetStatus = assets[0].status;
+
+        // Log status for debugging
+        z.console.log(`Asset ${bundle.inputData.asset_id} status: ${assetStatus}`);
+
+      } while (!READY_STATES.includes(assetStatus));
+
+      // Now proceed with adding to playlist
       const payload = {
         asset_id: bundle.inputData.asset_id,
         playlist_id: bundle.inputData.playlist_id,
@@ -43,10 +65,6 @@ const schedulePlaylistItem = {
       if (bundle.inputData.duration) {
         payload.duration = bundle.inputData.duration;
       }
-
-      // TODO: Do API calls until the state if either 'downloading',
-      // 'processing', 'finished'
-      await new Promise(resolve => setTimeout(resolve, 3000));
 
       const response = await z.request({
         url: 'https://api.screenlyapp.com/api/v4/playlist-items/',
