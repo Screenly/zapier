@@ -39,7 +39,7 @@ Screenly displays with 5000+ apps.
    - Select a "Trigger event" from the list of available events. For example,
      select "New File in Folder". Configure what directory you want to monitor.
    - Choose Screenly as your action app.
-   - Select the action event that you you want to be executed. For example,
+   - Select the action event that you want to be executed. For example,
      select "Upload Asset". Click "Continue".
    - Configure the "Action Event". For example, select the folder you want to monitor.
    - For the "Account", link your Screenly account.
@@ -53,7 +53,7 @@ Screenly displays with 5000+ apps.
    - Make sure that the Zap is enabled.
    - Upload your file to the folder you configured.
    - Go to your Screenly dashboard and click "Content" from the sidebar.
-   - You should see the a new asset that was uploaded.
+   - You should see the new asset that was uploaded.
 
 ## :zap: Quick Links
 
