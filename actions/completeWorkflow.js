@@ -1,6 +1,6 @@
 const FormData = require('form-data');
 const utils = require('../utils');
-const { ZAPIER_TAG } = require('../constants');
+const { ZAPIER_TAG, READY_STATES } = require('../constants');
 
 const completeWorkflow = {
   key: 'complete_workflow',
@@ -62,31 +62,27 @@ const completeWorkflow = {
         throw new Error('Either select an existing playlist or provide a name for a new one');
       }
 
-      const formData = new FormData();
-      formData.append('title', bundle.inputData.title);
-      formData.append('duration', bundle.inputData.duration || 10);
-      formData.append('tags', ZAPIER_TAG);
-
-      const fileResponse = await z.request({
-        url: bundle.inputData.file,
-        raw: true,
-      });
-      if (fileResponse.status >= 400) {
-        throw new Error(`Failed to fetch file: ${fileResponse.status}`);
-      }
-
-      formData.append('file', fileResponse.body, 'asset');
-
       const assetResponse = await z.request({
         url: 'https://api.screenlyapp.com/api/v4/assets/',
         method: 'POST',
         headers: {
-          Authorization: `Token ${bundle.authData.api_key}`,
+          'Authorization': `Token ${bundle.authData.api_key}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=representation',
         },
-        body: formData,
+        body: {
+          title: bundle.inputData.title,
+          source_url: bundle.inputData.file,
+          disable_verification: false
+        },
       });
 
-      const asset = utils.handleError(assetResponse, 'Failed to upload asset');
+      const assets = utils.handleError(assetResponse, 'Failed to upload asset');
+      const asset = assets[0];
+
+      if (assets.length === 0) {
+        throw new Error('No assets returned from the Screenly API');
+      }
 
       let playlistId = bundle.inputData.playlist_id;
 
@@ -96,17 +92,45 @@ const completeWorkflow = {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Token ${bundle.authData.api_key}`,
+            'Authorization': `Token ${bundle.authData.api_key}`,
           },
           body: {
-            name: bundle.inputData.new_playlist_name,
-            tags: [ZAPIER_TAG],
+            title: bundle.inputData.new_playlist_name,
           },
         });
 
-        const playlist = utils.handleError(playlistResponse, 'Failed to create playlist');
-        playlistId = playlist.id;
+        // TODO: Create a playlist label via the v4 API.
+        // See the following for details:
+        // - https://developer.screenly.io/api_v4/#create-a-label
+        // - https://developer.screenly.io/api_v4/#create-a-playlist-label
+
+        const playlists = utils.handleError(playlistResponse, 'Failed to create playlist');
+
+        if (playlists.length === 0) {
+          throw new Error('No playlists returned from the Screenly API');
+        }
+
+        playlistId = playlists[0].id;
       }
+
+      // Check asset status until ready
+      // TODO: Similar to @schedulePlaylistItem.js, we should
+      // move this to a separate function.
+      let assetStatus;
+      do {
+        const statusResponse = await z.request({
+          url: `https://api.screenlyapp.com/api/v4/assets?id=eq.${asset.id}`,
+          headers: {
+            Authorization: `Token ${bundle.authData.api_key}`,
+          },
+        });
+
+        const assets = utils.handleError(statusResponse, 'Failed to check asset status');
+        assetStatus = assets[0].status;
+
+        // Log status for debugging
+        z.console.log(`Asset ${asset.id} status: ${assetStatus}`);
+      } while (!READY_STATES.includes(assetStatus));
 
       const playlistItemResponse = await z.request({
         url: 'https://api.screenlyapp.com/api/v4/playlist-items/',
@@ -116,21 +140,23 @@ const completeWorkflow = {
           Authorization: `Token ${bundle.authData.api_key}`,
         },
         body: {
-          asset: asset.id,
-          playlist: playlistId,
+          asset_id: asset.id,
+          playlist_id: playlistId,
         },
       });
 
       utils.handleError(playlistItemResponse, 'Failed to add asset to playlist');
 
       const screenResponse = await z.request({
-        url: `https://api.screenlyapp.com/api/v4/screens/${bundle.inputData.screen_id}/`,
+        url: `https://api.screenlyapp.com/api/v4.1/screens/`,
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Token ${bundle.authData.api_key}`,
         },
         body: {
+          // TODO: `playlist` is not a valid field in the v4.1 API.
+          // Fix this.
           playlist: playlistId,
         },
       });

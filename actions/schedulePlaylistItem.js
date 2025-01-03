@@ -1,7 +1,5 @@
 const utils = require('../utils');
-
-// Terminal states that indicate the asset is ready
-const READY_STATES = ['downloading', 'processing', 'finished'];
+const { READY_STATES } = require('../constants');
 
 const schedulePlaylistItem = {
   key: 'schedule_playlist_item',
@@ -39,6 +37,8 @@ const schedulePlaylistItem = {
     ],
     perform: async (z, bundle) => {
       // Check asset status until ready
+      // TODO: Similar to @completeWorkflow.js, we should
+      // move this to a separate function.
       let assetStatus;
       do {
         const statusResponse = await z.request({
