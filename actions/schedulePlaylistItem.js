@@ -36,25 +36,7 @@ const schedulePlaylistItem = {
       },
     ],
     perform: async (z, bundle) => {
-      // Check asset status until ready
-      // TODO: Similar to @completeWorkflow.js, we should
-      // move this to a separate function.
-      let assetStatus;
-      do {
-        const statusResponse = await z.request({
-          url: `https://api.screenlyapp.com/api/v4/assets?id=eq.${bundle.inputData.asset_id}`,
-          headers: {
-            Authorization: `Token ${bundle.authData.api_key}`,
-          },
-        });
-
-        const assets = utils.handleError(statusResponse, 'Failed to check asset status');
-        assetStatus = assets[0].status;
-
-        // Log status for debugging
-        z.console.log(`Asset ${bundle.inputData.asset_id} status: ${assetStatus}`);
-
-      } while (!READY_STATES.includes(assetStatus));
+      await utils.waitForAssetReady(z, bundle.inputData.asset_id, bundle.authData.api_key);
 
       // Now proceed with adding to playlist
       const payload = {

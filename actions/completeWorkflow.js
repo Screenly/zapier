@@ -114,23 +114,7 @@ const completeWorkflow = {
       }
 
       // Check asset status until ready
-      // TODO: Similar to @schedulePlaylistItem.js, we should
-      // move this to a separate function.
-      let assetStatus;
-      do {
-        const statusResponse = await z.request({
-          url: `https://api.screenlyapp.com/api/v4/assets?id=eq.${asset.id}`,
-          headers: {
-            Authorization: `Token ${bundle.authData.api_key}`,
-          },
-        });
-
-        const assets = utils.handleError(statusResponse, 'Failed to check asset status');
-        assetStatus = assets[0].status;
-
-        // Log status for debugging
-        z.console.log(`Asset ${asset.id} status: ${assetStatus}`);
-      } while (!READY_STATES.includes(assetStatus));
+      await utils.waitForAssetReady(z, asset.id, bundle.authData.api_key);
 
       const playlistItemResponse = await z.request({
         url: 'https://api.screenlyapp.com/api/v4/playlist-items/',
