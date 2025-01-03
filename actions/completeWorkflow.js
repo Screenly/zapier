@@ -131,21 +131,21 @@ const completeWorkflow = {
 
       utils.handleError(playlistItemResponse, 'Failed to add asset to playlist');
 
-      const screenResponse = await z.request({
-        url: `https://api.screenlyapp.com/api/v4.1/screens/`,
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Token ${bundle.authData.api_key}`,
-        },
-        body: {
-          // TODO: `playlist` is not a valid field in the v4.1 API.
-          // Fix this.
-          playlist: playlistId,
-        },
-      });
-
-      utils.handleError(screenResponse, 'Failed to assign playlist to screen');
+      // TODO: Uncomment this block once the API call is fixes.
+      // const screenResponse = await z.request({
+      //   url: `https://api.screenlyapp.com/api/v4.1/screens/`,
+      //   method: 'PATCH',
+      //   headers: {
+      //     'Content-Type': 'application/json',
+      //     Authorization: `Token ${bundle.authData.api_key}`,
+      //   },
+      //   body: {
+      //     // TODO: `playlist` is not a valid field in the v4.1 API.
+      //     // Fix this.
+      //     playlist: playlistId,
+      //   },
+      // });
+      // utils.handleError(screenResponse, 'Failed to assign playlist to screen');
 
       return {
         asset: asset,
