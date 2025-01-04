@@ -373,27 +373,26 @@ describe('Complete Workflow', () => {
 
     nock('https://example.com').get('/test.jpg').reply(200, Buffer.from('fake-image-data'));
 
-    nock('https://api.screenlyapp.com').post('/api/v4/assets/').reply(201, {
+    nock('https://api.screenlyapp.com').post('/api/v4/assets/').reply(201, [{
       id: 'asset-123',
       title: 'Test Asset',
-    });
+    }]);
+
+    nock('https://api.screenlyapp.com')
+      .get('/api/v4/assets?id=eq.asset-123')
+      .matchHeader('Authorization', `Token ${TEST_API_KEY}`)
+      .reply(200, [{
+        id: 'asset-123',
+        status: 'finished',
+      }]);
 
     nock('https://api.screenlyapp.com')
       .post('/api/v4/playlist-items/', {
-        asset: 'asset-123',
-        playlist: 'playlist-123',
+        asset_id: 'asset-123',
+        playlist_id: 'playlist-123',
       })
       .reply(201, {
         id: 'item-123',
-      });
-
-    nock('https://api.screenlyapp.com')
-      .patch('/api/v4/screens/screen-123/', {
-        playlist: 'playlist-123',
-      })
-      .reply(200, {
-        id: 'screen-123',
-        playlist: 'playlist-123',
       });
 
     const response = await appTester(App.creates.complete_workflow.operation.perform, bundle);
@@ -415,38 +414,35 @@ describe('Complete Workflow', () => {
 
     nock('https://example.com').get('/test.jpg').reply(200, Buffer.from('fake-image-data'));
 
-    nock('https://api.screenlyapp.com').post('/api/v4/assets/').reply(201, {
+    nock('https://api.screenlyapp.com').post('/api/v4/assets/').reply(201, [{
       id: 'asset-123',
       title: 'Test Asset',
-    });
+    }]);
 
     nock('https://api.screenlyapp.com')
       .post('/api/v4/playlists/', {
-        name: 'New Playlist',
-        tags: ['created_by_zapier'],
+        title: 'New Playlist',
       })
-      .reply(201, {
+      .reply(201, [{
         id: 'playlist-123',
         name: 'New Playlist',
-        tags: ['created_by_zapier'],
-      });
+      }]);
+
+    nock('https://api.screenlyapp.com')
+      .get('/api/v4/assets?id=eq.asset-123')
+      .matchHeader('Authorization', `Token ${TEST_API_KEY}`)
+      .reply(200, [{
+        id: 'asset-123',
+        status: 'finished',
+      }]);
 
     nock('https://api.screenlyapp.com')
       .post('/api/v4/playlist-items/', {
-        asset: 'asset-123',
-        playlist: 'playlist-123',
+        asset_id: 'asset-123',
+        playlist_id: 'playlist-123',
       })
       .reply(201, {
         id: 'item-123',
-      });
-
-    nock('https://api.screenlyapp.com')
-      .patch('/api/v4/screens/screen-123/', {
-        playlist: 'playlist-123',
-      })
-      .reply(200, {
-        id: 'screen-123',
-        playlist: 'playlist-123',
       });
 
     const response = await appTester(App.creates.complete_workflow.operation.perform, bundle);
