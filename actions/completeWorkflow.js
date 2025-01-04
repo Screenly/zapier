@@ -1,6 +1,6 @@
 const FormData = require('form-data');
 const utils = require('../utils');
-const { ZAPIER_TAG, READY_STATES } = require('../constants');
+const { ZAPIER_TAG } = require('../constants');
 
 const completeWorkflow = {
   key: 'complete_workflow',
@@ -88,21 +88,61 @@ const completeWorkflow = {
 
       if (!playlistId) {
         const playlistResponse = await z.request({
-          url: 'https://api.screenlyapp.com/api/v4/playlists/',
+          url: 'https://api.screenlyapp.com/api/v4/playlists',
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Token ${bundle.authData.api_key}`,
+            'Prefer': 'return=representation',
           },
           body: {
             title: bundle.inputData.new_playlist_name,
           },
         });
 
-        // TODO: Create a playlist label via the v4 API.
-        // See the following for details:
-        // - https://developer.screenly.io/api_v4/#create-a-label
-        // - https://developer.screenly.io/api_v4/#create-a-playlist-label
+        const labelQueryResponse = await z.request({
+          url: `https://api.screenlyapp.com/api/v4/labels?name=eq.${ZAPIER_TAG}`,
+          headers: {
+            'Authorization': `Token ${bundle.authData.api_key}`,
+            'Prefer': 'return=representation',
+          },
+        });
+
+        let labelId;
+        const existingLabels = labelQueryResponse.json;
+
+        if (existingLabels.length > 0) {
+          labelId = existingLabels[0].id;
+        } else {
+          const labelResponse = await z.request({
+            url: 'https://api.screenlyapp.com/api/v4/labels/',
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Token ${bundle.authData.api_key}`,
+              'Prefer': 'return=representation',
+            },
+            body: {
+              name: ZAPIER_TAG,
+            },
+          });
+          labelId = utils.handleError(labelResponse, 'Failed to create label').id;
+        }
+
+        // TODO: Handle HTTP 409 error here.
+        const playlistLabelResponse = await z.request({
+          url: 'https://api.screenlyapp.com/api/v4/labels/playlists/',
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Token ${bundle.authData.api_key}`,
+            'Prefer': 'return=representation',
+          },
+          body: {
+            playlist_id: playlistId,
+            label_id: labelId,
+          },
+        });
 
         const playlists = utils.handleError(playlistResponse, 'Failed to create playlist');
 
@@ -122,6 +162,7 @@ const completeWorkflow = {
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Token ${bundle.authData.api_key}`,
+          'Prefer': 'return=representation',
         },
         body: {
           asset_id: asset.id,
