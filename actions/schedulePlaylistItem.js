@@ -1,5 +1,4 @@
 const utils = require('../utils');
-const { READY_STATES } = require('../constants');
 
 const schedulePlaylistItem = {
   key: 'schedule_playlist_item',
