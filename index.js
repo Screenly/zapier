@@ -1,8 +1,8 @@
-const uploadAsset = require('./actions/uploadAsset');
-const schedulePlaylistItem = require('./actions/schedulePlaylistItem');
-const assignScreenToPlaylist = require('./actions/assignScreenToPlaylist');
-const completeWorkflow = require('./actions/completeWorkflow');
-const cleanupZapierContent = require('./actions/cleanupZapierContent');
+const uploadAsset = require('./actions/upload-asset');
+const schedulePlaylistItem = require('./actions/schedule-playlist-item');
+const assignScreenToPlaylist = require('./actions/assign-screen-to-playlist');
+const completeWorkflow = require('./actions/complete-workflow');
+const cleanupZapierContent = require('./actions/cleanup-zapier-content');
 const { getScreens, getPlaylists, getAssets } = require('./triggers/index');
 
 // Authentication setup
