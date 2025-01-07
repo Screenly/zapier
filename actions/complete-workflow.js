@@ -1,4 +1,3 @@
-const FormData = require('form-data');
 const utils = require('../utils');
 const { ZAPIER_TAG } = require('../constants');
 
@@ -62,51 +61,101 @@ const completeWorkflow = {
         throw new Error('Either select an existing playlist or provide a name for a new one');
       }
 
-      const formData = new FormData();
-      formData.append('title', bundle.inputData.title);
-      formData.append('duration', bundle.inputData.duration || 10);
-      formData.append('tags', ZAPIER_TAG);
-
-      const fileResponse = await z.request({
-        url: bundle.inputData.file,
-        raw: true,
-      });
-      if (fileResponse.status >= 400) {
-        throw new Error(`Failed to fetch file: ${fileResponse.status}`);
-      }
-
-      formData.append('file', fileResponse.body, 'asset');
-
       const assetResponse = await z.request({
         url: 'https://api.screenlyapp.com/api/v4/assets/',
         method: 'POST',
         headers: {
-          Authorization: `Token ${bundle.authData.api_key}`,
+          'Authorization': `Token ${bundle.authData.api_key}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=representation',
         },
-        body: formData,
+        body: {
+          title: bundle.inputData.title,
+          source_url: bundle.inputData.file,
+          disable_verification: false
+        },
       });
 
-      const asset = utils.handleError(assetResponse, 'Failed to upload asset');
+      const assets = utils.handleError(assetResponse, 'Failed to upload asset');
+      const asset = assets[0];
+
+      if (assets.length === 0) {
+        throw new Error('No assets returned from the Screenly API');
+      }
 
       let playlistId = bundle.inputData.playlist_id;
 
       if (!playlistId) {
         const playlistResponse = await z.request({
-          url: 'https://api.screenlyapp.com/api/v4/playlists/',
+          url: 'https://api.screenlyapp.com/api/v4/playlists',
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Token ${bundle.authData.api_key}`,
+            'Authorization': `Token ${bundle.authData.api_key}`,
+            'Prefer': 'return=representation',
           },
           body: {
-            name: bundle.inputData.new_playlist_name,
-            tags: [ZAPIER_TAG],
+            title: bundle.inputData.new_playlist_name,
+            // Set predicate to something like: "TRUE AND ($DATE >= 1731628800000)", but make
+            // it dynamic based on the current date
+            predicate: `TRUE AND ($DATE >= ${new Date().getTime()})`,
           },
         });
 
-        const playlist = utils.handleError(playlistResponse, 'Failed to create playlist');
-        playlistId = playlist.id;
+        const playlists = utils.handleError(playlistResponse, 'Failed to create playlist');
+
+        if (playlists.length === 0) {
+          throw new Error('No playlists returned from the Screenly API');
+        }
+
+        playlistId = playlists[0].id;
+
+        const labelQueryResponse = await z.request({
+          url: `https://api.screenlyapp.com/api/v4/labels?name=eq.${ZAPIER_TAG}`,
+          headers: {
+            'Authorization': `Token ${bundle.authData.api_key}`,
+            'Prefer': 'return=representation',
+          },
+        });
+
+        let labelId;
+        const existingLabels = labelQueryResponse.json;
+
+        if (existingLabels.length > 0) {
+          labelId = existingLabels[0].id;
+        } else {
+          const labelResponse = await z.request({
+            url: 'https://api.screenlyapp.com/api/v4/labels/',
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Token ${bundle.authData.api_key}`,
+              'Prefer': 'return=representation',
+            },
+            body: {
+              name: ZAPIER_TAG,
+            },
+          });
+          labelId = utils.handleError(labelResponse, 'Failed to create label').id;
+        }
+
+        await z.request({
+          url: `https://api.screenlyapp.com/api/v4/labels/playlists`,
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Token ${bundle.authData.api_key}`,
+            'Prefer': 'return=representation',
+          },
+          body: {
+            playlist_id: playlistId,
+            label_id: labelId,
+          },
+        });
       }
+
+      // Check asset status until ready
+      await utils.waitForAssetReady(z, asset.id, bundle.authData.api_key);
 
       const playlistItemResponse = await z.request({
         url: 'https://api.screenlyapp.com/api/v4/playlist-items/',
@@ -114,28 +163,36 @@ const completeWorkflow = {
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Token ${bundle.authData.api_key}`,
+          'Prefer': 'return=representation',
         },
         body: {
-          asset: asset.id,
-          playlist: playlistId,
+          asset_id: asset.id,
+          playlist_id: playlistId,
         },
       });
 
       utils.handleError(playlistItemResponse, 'Failed to add asset to playlist');
 
-      const screenResponse = await z.request({
-        url: `https://api.screenlyapp.com/api/v4/screens/${bundle.inputData.screen_id}/`,
-        method: 'PATCH',
+      const labelToPlaylistResponse = await z.request({
+        url: `https://api.screenlyapp.com/api/v4/labels/playlists`,
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Token ${bundle.authData.api_key}`,
+          'Authorization': `Token ${bundle.authData.api_key}`,
+          'Prefer': 'return=representation',
         },
         body: {
-          playlist: playlistId,
+          playlist_id: playlistId,
+          label_id: bundle.inputData.screen_id,
         },
+        skipThrowForStatus: true,
       });
 
-      utils.handleError(screenResponse, 'Failed to assign playlist to screen');
+      if (labelToPlaylistResponse.status === 409) {
+        z.console.log('Playlist already assigned to screen');
+      } else {
+        utils.handleError(labelToPlaylistResponse, 'Failed to assign playlist to screen');
+      }
 
       return {
         asset: asset,

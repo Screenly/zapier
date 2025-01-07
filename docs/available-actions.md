@@ -14,8 +14,6 @@ Add content to your playlists:
 
 - Choose from your existing playlists
 - Set display duration
-- Schedule content with start/end dates
-- Select target screens
 
 ## 3. Complete Workflow
 
@@ -24,7 +22,6 @@ Do everything in one step:
 - Upload new content
 - Add to playlist
 - Assign to screens
-- Set schedule
 - Perfect for automated content management
 
 ## 4. Cleanup

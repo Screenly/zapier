@@ -371,30 +371,49 @@ describe('Complete Workflow', () => {
       },
     };
 
-    nock('https://example.com').get('/test.jpg').reply(200, Buffer.from('fake-image-data'));
+    // Mock file download
+    nock('https://example.com')
+      .get('/test.jpg')
+      .reply(200, Buffer.from('fake-image-data'));
 
-    nock('https://api.screenlyapp.com').post('/api/v4/assets/').reply(201, {
-      id: 'asset-123',
-      title: 'Test Asset',
-    });
+    // Mock asset creation
+    nock('https://api.screenlyapp.com')
+      .post('/api/v4/assets/', {
+        title: 'Test Asset',
+        source_url: 'https://example.com/test.jpg',
+        disable_verification: false
+      })
+      .reply(201, [{
+        id: 'asset-123',
+        title: 'Test Asset',
+      }]);
 
+    // Mock asset status check
+    nock('https://api.screenlyapp.com')
+      .get('/api/v4/assets?id=eq.asset-123')
+      .matchHeader('Authorization', `Token ${TEST_API_KEY}`)
+      .reply(200, [{
+        id: 'asset-123',
+        status: 'finished',
+      }]);
+
+    // Mock playlist item creation
     nock('https://api.screenlyapp.com')
       .post('/api/v4/playlist-items/', {
-        asset: 'asset-123',
-        playlist: 'playlist-123',
+        asset_id: 'asset-123',
+        playlist_id: 'playlist-123',
       })
       .reply(201, {
         id: 'item-123',
       });
 
+    // Mock assigning playlist to screen
     nock('https://api.screenlyapp.com')
-      .patch('/api/v4/screens/screen-123/', {
-        playlist: 'playlist-123',
+      .post('/api/v4/labels/playlists', {
+        playlist_id: 'playlist-123',
+        label_id: 'screen-123'
       })
-      .reply(200, {
-        id: 'screen-123',
-        playlist: 'playlist-123',
-      });
+      .reply(409); // Simulate already assigned
 
     const response = await appTester(App.creates.complete_workflow.operation.perform, bundle);
     expect(response.asset.id).toBe('asset-123');
@@ -415,39 +434,63 @@ describe('Complete Workflow', () => {
 
     nock('https://example.com').get('/test.jpg').reply(200, Buffer.from('fake-image-data'));
 
-    nock('https://api.screenlyapp.com').post('/api/v4/assets/').reply(201, {
+    nock('https://api.screenlyapp.com').post('/api/v4/assets/').reply(201, [{
       id: 'asset-123',
       title: 'Test Asset',
-    });
+    }]);
 
     nock('https://api.screenlyapp.com')
-      .post('/api/v4/playlists/', {
-        name: 'New Playlist',
-        tags: ['created_by_zapier'],
+      .post('/api/v4/playlists', {
+        title: 'New Playlist',
+        predicate: new RegExp('TRUE AND \\(\\$DATE >= \\d+\\)')
       })
-      .reply(201, {
+      .reply(201, [{
         id: 'playlist-123',
         name: 'New Playlist',
-        tags: ['created_by_zapier'],
+      }]);
+
+    nock('https://api.screenlyapp.com')
+      .get('/api/v4/labels?name=eq.created_by_zapier')
+      .reply(200, []);
+
+    nock('https://api.screenlyapp.com')
+      .post('/api/v4/labels/', {
+        name: 'created_by_zapier'
+      })
+      .reply(201, {
+        id: 'label-123'
       });
 
     nock('https://api.screenlyapp.com')
+      .post('/api/v4/labels/playlists', {
+        playlist_id: 'playlist-123',
+        label_id: 'label-123'
+      })
+      .reply(201);
+
+    nock('https://api.screenlyapp.com')
+      .get('/api/v4/assets?id=eq.asset-123')
+      .matchHeader('Authorization', `Token ${TEST_API_KEY}`)
+      .reply(200, [{
+        id: 'asset-123',
+        status: 'finished',
+      }]);
+
+    nock('https://api.screenlyapp.com')
       .post('/api/v4/playlist-items/', {
-        asset: 'asset-123',
-        playlist: 'playlist-123',
+        asset_id: 'asset-123',
+        playlist_id: 'playlist-123',
       })
       .reply(201, {
         id: 'item-123',
       });
 
     nock('https://api.screenlyapp.com')
-      .patch('/api/v4/screens/screen-123/', {
-        playlist: 'playlist-123',
+      .post('/api/v4/labels/playlists', {
+        playlist_id: 'playlist-123',
+        label_id: 'screen-123'
       })
-      .reply(200, {
-        id: 'screen-123',
-        playlist: 'playlist-123',
-      });
+      .reply(201);
 
     const response = await appTester(App.creates.complete_workflow.operation.perform, bundle);
     expect(response.asset.id).toBe('asset-123');
