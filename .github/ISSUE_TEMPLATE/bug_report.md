@@ -1,37 +1,30 @@
 ---
-name: Bug report
+name: Bug Report
 about: Create a report to help us improve
-title: ''
-labels: bug
+title: '[BUG] '
+labels: 'bug'
 assignees: ''
-
 ---
 
-**Describe the bug**
+### Describe the Bug
 
 A clear and concise description of what the bug is.
 
-**To Reproduce**
+### Steps to Reproduce
 
-Steps to reproduce the behavior:
 1. Go to '...'
 2. Click on '....'
-3. See error
+3. Scroll down to '....'
+4. See error
 
-**Expected behavior**
+### Expected Behavior
 
 A clear and concise description of what you expected to happen.
 
-**Screenshots**
+### Screenshots
 
 If applicable, add screenshots to help explain your problem.
 
-**Zapier Environment:**
-
- - Zapier Platform Core Version: [e.g. 15.19.0]
- - Node Version: [e.g. 16.14.0]
- - Platform: [e.g. Windows/MacOS/Linux]
-
-**Additional context**
+### Additional Context
 
 Add any other context about the problem here.
