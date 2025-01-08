@@ -28,8 +28,7 @@ Do everything in one step:
 
 Maintain your content library:
 
-- Remove Zapier-created content
-- Automatic cleanup based on rules
+- Remove Zapier-created playlists
 - Safe deletion with confirmation
 
 ## 5. Assign Screen to Playlist
