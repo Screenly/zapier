@@ -529,45 +529,38 @@ describe('Cleanup', () => {
       },
     };
 
-    // Mock assets list with some Zapier-created assets
+    // Mock labels list with Zapier label
     nock('https://api.screenlyapp.com')
-      .get('/api/v4/assets/')
+      .get('/api/v4/labels/?name=eq.created_by_zapier')
       .matchHeader('Authorization', `Token ${TEST_API_KEY}`)
-      .reply(200, [
-        { id: 'asset-1', title: 'Asset 1', tags: ['created_by_zapier'] },
-        { id: 'asset-2', title: 'Asset 2', tags: [] },
-        { id: 'asset-3', title: 'Asset 3', tags: ['created_by_zapier'] },
-      ]);
+      .reply(200, [{
+        id: 'label-123',
+        name: 'created_by_zapier'
+      }]);
 
-    // Mock playlists list with some Zapier-created playlists
+    // Mock playlist to label mappings
     nock('https://api.screenlyapp.com')
-      .get('/api/v4/playlists/')
+      .get('/api/v4/labels/playlists?label_id=eq.label-123')
       .matchHeader('Authorization', `Token ${TEST_API_KEY}`)
       .reply(200, [
-        { id: 'playlist-1', name: 'Playlist 1', tags: ['created_by_zapier'] },
-        { id: 'playlist-2', name: 'Playlist 2', tags: [] },
+        { playlist_id: 'playlist-1', label_id: 'label-123' },
+        { playlist_id: 'playlist-2', label_id: 'label-123' }
       ]);
 
     // Mock playlist deletions
     nock('https://api.screenlyapp.com')
-      .delete('/api/v4/playlists/playlist-1/')
+      .delete('/api/v4/playlists/?id=eq.playlist-1/')
       .matchHeader('Authorization', `Token ${TEST_API_KEY}`)
-      .reply(204);
-
-    // Mock asset deletions
-    nock('https://api.screenlyapp.com')
-      .delete('/api/v4/assets/asset-1/')
-      .matchHeader('Authorization', `Token ${TEST_API_KEY}`)
-      .reply(204);
+      .reply(200);
 
     nock('https://api.screenlyapp.com')
-      .delete('/api/v4/assets/asset-3/')
+      .delete('/api/v4/playlists/?id=eq.playlist-2/')
       .matchHeader('Authorization', `Token ${TEST_API_KEY}`)
-      .reply(204);
+      .reply(200);
 
     const response = await appTester(App.creates.cleanup_zapier_content.operation.perform, bundle);
-    expect(response.playlists_removed).toBe(1);
-    expect(response.assets_removed).toBe(2);
+    expect(response.playlists_removed).toBe(2);
+    expect(response.message).toBe('Successfully removed 2 playlists');
   });
 
   test('requires confirmation', async () => {
@@ -593,20 +586,14 @@ describe('Cleanup', () => {
       },
     };
 
-    // Mock empty assets list
+    // Mock empty labels list
     nock('https://api.screenlyapp.com')
-      .get('/api/v4/assets/')
+      .get('/api/v4/labels/?name=eq.created_by_zapier')
       .matchHeader('Authorization', `Token ${TEST_API_KEY}`)
       .reply(200, []);
 
-    // Mock empty playlists list
-    nock('https://api.screenlyapp.com')
-      .get('/api/v4/playlists/')
-      .matchHeader('Authorization', `Token ${TEST_API_KEY}`)
-      .reply(200, []);
-
-    const response = await appTester(App.creates.cleanup_zapier_content.operation.perform, bundle);
-    expect(response.playlists_removed).toBe(0);
-    expect(response.assets_removed).toBe(0);
+    await expect(
+      appTester(App.creates.cleanup_zapier_content.operation.perform, bundle)
+    ).rejects.toThrow('No labels returned from the Screenly API');
   });
 });

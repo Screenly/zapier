@@ -23,59 +23,70 @@ const cleanupZapierContent = {
         throw new Error('Please confirm the cleanup operation');
       }
 
-      const assetsResponse = await z.request({
-        url: 'https://api.screenlyapp.com/api/v4/assets/',
+      const queryParams = {
+        'name': `eq.${ZAPIER_TAG}`,
+      };
+      const queryString = Object.keys(queryParams)
+        .map(key => `${key}=${queryParams[key]}`)
+        .join('&');
+      const labelResponse = await z.request({
+        url: `https://api.screenlyapp.com/api/v4/labels/?${queryString}`,
         method: 'GET',
         headers: {
-          Authorization: `Token ${bundle.authData.api_key}`,
+          'Content-Type': 'application/json',
+          'Authorization': `Token ${bundle.authData.api_key}`,
+          'Prefer': 'return=representation',
         },
       });
 
-      const assets = utils
-        .handleError(assetsResponse, 'Failed to fetch assets')
-        .filter((asset) => asset.tags.includes(ZAPIER_TAG));
-
-      const playlistsResponse = await z.request({
-        url: 'https://api.screenlyapp.com/api/v4/playlists/',
-        method: 'GET',
-        headers: {
-          Authorization: `Token ${bundle.authData.api_key}`,
-        },
-      });
-
-      const playlists = utils
-        .handleError(playlistsResponse, 'Failed to fetch playlists')
-        .filter((playlist) => playlist.tags && playlist.tags.includes(ZAPIER_TAG));
-
-      for (const asset of assets) {
-        await z.request({
-          url: `https://api.screenlyapp.com/api/v4/assets/${asset.id}/`,
-          method: 'DELETE',
-          headers: {
-            Authorization: `Token ${bundle.authData.api_key}`,
-          },
-        });
+      const labels = utils.handleError(labelResponse, 'Failed to fetch labels');
+      if (labels.length === 0) {
+        throw new Error('No labels returned from the Screenly API');
       }
+      const label = labels[0];
 
-      for (const playlist of playlists) {
-        await z.request({
-          url: `https://api.screenlyapp.com/api/v4/playlists/${playlist.id}/`,
+      const playlistToLabelResponse = await z.request({
+        url: `https://api.screenlyapp.com/api/v4/labels/playlists?label_id=eq.${label.id}`,
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Token ${bundle.authData.api_key}`,
+          'Prefer': 'return=representation',
+        },
+      });
+
+      const playlistToLabelMappings = utils.handleError(playlistToLabelResponse, 'Failed to fetch playlist to labels');
+
+      const playListIds = playlistToLabelMappings
+        .map(mapping => mapping.playlist_id);
+
+      let successfulDeletions = 0;
+
+      for (const playlistId of playListIds) {
+        const response = await z.request({
+          url: `https://api.screenlyapp.com/api/v4/playlists/?id=eq.${playlistId}/`,
           method: 'DELETE',
           headers: {
-            Authorization: `Token ${bundle.authData.api_key}`,
+            'Content-Type': 'application/json',
+            'Authorization': `Token ${bundle.authData.api_key}`,
+            'Prefer': 'return=representation',
           },
+          skipThrowForStatus: true,
         });
+
+        if (response.status === 200) {
+          successfulDeletions++;
+        }
       }
 
       return {
-        playlists_removed: playlists.length,
-        assets_removed: assets.length,
+        playlists_removed: successfulDeletions,
+        message: `Successfully removed ${successfulDeletions} playlists`,
       };
     },
     sample: {
-      assets_removed: 1,
       playlists_removed: 1,
-      message: 'Successfully cleaned up Zapier content',
+      message: 'Successfully removed 1 playlist',
     },
   },
 };
