@@ -27,24 +27,39 @@ const assignScreenToPlaylist = {
       },
     ],
     perform: async (z, bundle) => {
-      const response = await z.request({
-        url: `https://api.screenlyapp.com/api/v4/screens/${bundle.inputData.screen_id}/`,
-        method: 'PATCH',
+      let screenId = bundle.inputData.screen_id;
+      let playlistId = bundle.inputData.playlist_id;
+
+      let labelToPlaylistResponse = await z.request({
+        url: `https://api.screenlyapp.com/api/v4/labels/playlists`,
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Token ${bundle.authData.api_key}`,
+          'Authorization': `Token ${bundle.authData.api_key}`,
+          'Prefer': 'return=representation',
         },
         body: {
-          playlist: bundle.inputData.playlist_id,
+          playlist_id: playlistId,
+          label_id: screenId,
         },
+        skipThrowForStatus: true,
       });
 
-      return utils.handleError(response, 'Failed to assign screen to playlist');
+      if (labelToPlaylistResponse.status === 409) {
+        z.console.log('Playlist already assigned to screen');
+      } else {
+        utils.handleError(labelToPlaylistResponse, 'Failed to assign playlist to screen');
+      }
+
+      return {
+        screen_id: screenId,
+        playlist_id: playlistId,
+      };
     },
     sample: {
-      id: 1,
-      name: 'Sample Screen',
-      playlist: 1,
+      screen_id: 1,
+      playlist_id: 1,
+      message: 'Successfully assigned playlist to screen',
     },
   },
 };
