@@ -32,14 +32,8 @@ Maintain your content library:
 - Automatic cleanup based on rules
 - Safe deletion with confirmation
 
-## 5. Enable/Disable Playlist
+## 5. Assign Screen to Playlist
 
-Control playlist visibility dynamically:
-
-- Enable or disable playlists based on conditions
-- Schedule playlist activation periods
-- Perfect for:
-  - Weather-based content
-  - Time-sensitive promotions
-  - Event-driven displays
-  - Seasonal campaigns
+- Assign a playlist to a screen
+- Automatically assign a playlist to a screen when a new asset is added to a playlist
+- If the playlist is already assigned to the screen, it will not be assigned again. No errors will be raised.
