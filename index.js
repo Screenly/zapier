@@ -3,7 +3,10 @@ const schedulePlaylistItem = require('./actions/schedule-playlist-item');
 const assignScreenToPlaylist = require('./actions/assign-screen-to-playlist');
 const completeWorkflow = require('./actions/complete-workflow');
 const cleanupZapierContent = require('./actions/cleanup-zapier-content');
-const { getScreens, getPlaylists, getAssets } = require('./triggers/index');
+
+const { getScreens } = require('./triggers/get-screens');
+const { getPlaylists } = require('./triggers/get-playlists');
+const { getAssets } = require('./triggers/get-assets');
 
 // Authentication setup
 const authentication = {
