@@ -61,6 +61,7 @@ Screenly displays with 5000+ apps.
 - [Developer Documentation](docs/developer-documentation.md)
 - [Common Use Cases](docs/common-use-cases.md)
 - [Example Integrations](docs/example-integrations.md)
+- [Cookbook](docs/cookbook/README.md)
 
 ## :lock: Security
 
