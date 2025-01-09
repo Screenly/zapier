@@ -13,6 +13,7 @@ During setup, you'll need to configure:
 * **Trigger Event**: Select **New File in Folder**
 * **Account**: Click **Sign In** and authenticate with your preferred Google account.
   When prompted, allow Zapier to access your Google Drive.
+* Click **Continue**
 
 For configuration:
 * Select the **Drive** and **Folder** you want to monitor
