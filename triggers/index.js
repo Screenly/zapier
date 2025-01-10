@@ -6,6 +6,7 @@ const getScreens = {
   display: {
     label: 'Get Screens',
     description: 'Triggers when listing available Screenly screens.',
+    hidden: true,
   },
   operation: {
     perform: async (z, bundle) => {
@@ -33,6 +34,7 @@ const getPlaylists = {
   display: {
     label: 'Get Playlists',
     description: 'Triggers when listing available Screenly playlists.',
+    hidden: true,
   },
   operation: {
     perform: async (z, bundle) => {
@@ -60,6 +62,7 @@ const getAssets = {
   display: {
     label: 'Get Assets',
     description: 'Triggers when listing available Screenly assets.',
+    hidden: true,
   },
   operation: {
     perform: async (z, bundle) => {
