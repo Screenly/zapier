@@ -6,6 +6,7 @@ const getPlaylists = {
   display: {
     label: 'Get Playlists',
     description: 'Triggers when listing available Screenly playlists.',
+    hidden: true,
   },
   operation: {
     perform: async (z, bundle) => {

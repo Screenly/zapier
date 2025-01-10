@@ -6,6 +6,7 @@ const getAssets = {
   display: {
     label: 'Get Assets',
     description: 'Triggers when listing available Screenly assets.',
+    hidden: true,
   },
   operation: {
     perform: async (z, bundle) => {

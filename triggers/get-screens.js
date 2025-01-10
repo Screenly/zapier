@@ -6,6 +6,7 @@ const getScreens = {
   display: {
     label: 'Get Screens',
     description: 'Triggers when listing available Screenly screens.',
+    hidden: true,
   },
   operation: {
     perform: async (z, bundle) => {
