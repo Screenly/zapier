@@ -368,6 +368,7 @@ describe('Complete Workflow', () => {
         title: 'Test Asset',
         playlist_id: 'playlist-123',
         screen_id: 'screen-123',
+        duration: 15,
       },
     };
 
@@ -402,6 +403,7 @@ describe('Complete Workflow', () => {
       .post('/api/v4/playlist-items/', {
         asset_id: 'asset-123',
         playlist_id: 'playlist-123',
+        duration: 15,
       })
       .reply(201, {
         id: 'item-123',
@@ -429,6 +431,7 @@ describe('Complete Workflow', () => {
         title: 'Test Asset',
         new_playlist_name: 'New Playlist',
         screen_id: 'screen-123',
+        duration: 15,
       },
     };
 
@@ -480,6 +483,7 @@ describe('Complete Workflow', () => {
       .post('/api/v4/playlist-items/', {
         asset_id: 'asset-123',
         playlist_id: 'playlist-123',
+        duration: 15,
       })
       .reply(201, {
         id: 'item-123',

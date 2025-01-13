@@ -168,6 +168,7 @@ const completeWorkflow = {
         body: {
           asset_id: asset.id,
           playlist_id: playlistId,
+          duration: bundle.inputData.duration || 10,
         },
       });
 
