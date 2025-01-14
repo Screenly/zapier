@@ -1,7 +1,4 @@
-const zapier = require('zapier-platform-core');
-const App = require('../index');
 const utils = require('../utils');
-const nock = require('nock');
 
 const TEST_API_KEY = 'valid-api-key';
 
