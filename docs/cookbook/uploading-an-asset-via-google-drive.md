@@ -60,3 +60,5 @@ using the toggle switch.
 * Verify that your new asset appears
 
 You can monitor the Zap's execution in the [Zap history](https://zapier.com/app/history).
+
+![Screenly content](/docs/cookbook/images/zapier-google-drive-05-zap-runs.png)
