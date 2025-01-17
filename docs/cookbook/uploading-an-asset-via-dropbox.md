@@ -62,3 +62,5 @@ using the toggle switch.
 * Verify that your new asset appears
 
 You can monitor the Zap's execution in the [Zap history](https://zapier.com/app/history).
+
+![Screenly action configuration](/docs/cookbook/images/zapier-dropbox-05-zap-runs.png)
