@@ -40,31 +40,34 @@ jobs:
           # Run tests with coverage and capture results in JSON format
           npm test -- --coverage-reporters=lcov --coverage-reporters=json-summary --json --outputFile=test-results.json
 
-          # Extract coverage from JSON and format for summary
-          echo "# Test Results (Node ${{ matrix.node-version }})" >> $GITHUB_STEP_SUMMARY
-          echo "## Coverage" >> $GITHUB_STEP_SUMMARY
-          echo "| Type | Coverage | Details |" >> $GITHUB_STEP_SUMMARY
-          echo "|------|----------|----------|" >> $GITHUB_STEP_SUMMARY
+          # Extract coverage and test results
+          {
+            echo "# Test Results (Node ${{ matrix.node-version }})"
+            echo "## Coverage"
+            echo "| Type | Coverage | Details |"
+            echo "|------|----------|----------|"
 
-          # Use jq to parse the coverage JSON
-          jq -r '.total |
-            "| Statements | \(.statements.pct)% | \(.statements.covered)/\(.statements.total) |\n| Branches | \(.branches.pct)% | \(.branches.covered)/\(.branches.total) |\n| Functions | \(.functions.pct)% | \(.functions.covered)/\(.functions.total) |\n| Lines | \(.lines.pct)% | \(.lines.covered)/\(.lines.total) |"' coverage/coverage-summary.json >> $GITHUB_STEP_SUMMARY || {
-              echo "| Coverage data not available | - | - |" >> $GITHUB_STEP_SUMMARY
-            }
+            # Use jq to parse the coverage JSON
+            jq -r '.total |
+              "| Statements | \(.statements.pct)% | \(.statements.covered)/\(.statements.total) |\n| Branches | \(.branches.pct)% | \(.branches.covered)/\(.branches.total) |\n| Functions | \(.functions.pct)% | \(.functions.covered)/\(.functions.total) |\n| Lines | \(.lines.pct)% | \(.lines.covered)/\(.lines.total) |"' coverage/coverage-summary.json || {
+                echo "| Coverage data not available | - | - |"
+              }
 
-          # Add test results using jq
-          echo "## Test Results" >> $GITHUB_STEP_SUMMARY
-          echo "| Total | Passed | Failed | Skipped |" >> $GITHUB_STEP_SUMMARY
-          echo "|-------|---------|---------|----------|" >> $GITHUB_STEP_SUMMARY
-          jq -r '"| \(.numTotalTests) | \(.numPassedTests) | \(.numFailedTests) | \(.numPendingTests) |"' test-results.json >> $GITHUB_STEP_SUMMARY
+            echo "## Test Results"
+            echo "| Total | Passed | Failed | Skipped |"
+            echo "|-------|---------|---------|----------|"
+            jq -r '"| \(.numTotalTests) | \(.numPassedTests) | \(.numFailedTests) | \(.numPendingTests) |"' test-results.json
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Live API sanity check
         if: github.ref == 'refs/heads/master' && github.event_name == 'push'
         env:
           SCREENLY_API_KEY: ${{ secrets.SCREENLY_API_TOKEN }}
         run: |
-          echo "## Live API Test Results" >> $GITHUB_STEP_SUMMARY
-          npm test
+          {
+            echo "## Live API Test Results"
+            npm test
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload coverage report
         uses: actions/upload-artifact@v4
@@ -77,17 +80,16 @@ jobs:
           mkdir -p __image_snapshots__
           CHROME_PATH="$(which chrome)" xvfb-run --auto-servernum --server-args="-screen 0 1280x800x24" npm run test:visual:ci -- -u --json --outputFile=visual-test-results.json
 
-          # Show test results
-          if [ -f "visual-test-results.json" ]; then
-            echo "## Visual Test Results" >> $GITHUB_STEP_SUMMARY
-            echo "| Total | Passed | Failed | Skipped |" >> $GITHUB_STEP_SUMMARY
-            echo "|-------|---------|---------|----------|" >> $GITHUB_STEP_SUMMARY
-            jq -r '"| \(.numTotalTests) | \(.numPassedTests) | \(.numFailedTests) | \(.numPendingTests) |"' visual-test-results.json >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-          fi
-
-          # Show screenshots in summary
+          # Show test results and screenshots
           {
+            if [ -f "visual-test-results.json" ]; then
+              echo "## Visual Test Results"
+              echo "| Total | Passed | Failed | Skipped |"
+              echo "|-------|---------|---------|----------|"
+              jq -r '"| \(.numTotalTests) | \(.numPassedTests) | \(.numFailedTests) | \(.numPendingTests) |"' visual-test-results.json
+              echo ""
+            fi
+
             echo "## Screenshots"
             echo ""
             for img in __image_snapshots__/ci-*.png; do
@@ -98,18 +100,14 @@ jobs:
                 echo "<details>"
                 echo "<summary>View Screenshot</summary>"
                 echo ""
-                encoded=$(cat "$img" | base64)
+                encoded=$(base64 < "$img")
                 echo "<img src=\"data:image/png;base64,${encoded}\" width=\"800\">"
                 echo ""
                 echo "</details>"
                 echo ""
               fi
             done
-          } >> $GITHUB_STEP_SUMMARY
-
-          # Create a flat directory for artifacts
-          mkdir -p artifacts
-          cp __image_snapshots__/*.png artifacts/
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload artifacts
         if: always()
