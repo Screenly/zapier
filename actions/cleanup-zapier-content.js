@@ -23,58 +23,21 @@ const cleanupZapierContent = {
         throw new Error('Please confirm the cleanup operation');
       }
 
-      const queryParams = {
-        'name': `eq.${ZAPIER_TAG}`,
-      };
-      const queryString = Object.keys(queryParams)
-        .map(key => `${key}=${queryParams[key]}`)
-        .join('&');
-      const labelResponse = await z.request({
-        url: `https://api.screenlyapp.com/api/v4/labels/?${queryString}`,
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Token ${bundle.authData.api_key}`,
-          'Prefer': 'return=representation',
-        },
+      // Get the Zapier tag label
+      const label = await utils.getLabel(z, bundle, { name: ZAPIER_TAG });
+
+      // Get all playlists associated with the Zapier tag
+      const playlistToLabelMappings = await utils.getPlaylistsByLabel(z, bundle, {
+        labelId: label.id
       });
 
-      const labels = utils.handleError(labelResponse, 'Failed to fetch labels');
-      if (labels.length === 0) {
-        throw new Error('No labels returned from the Screenly API');
-      }
-      const label = labels[0];
-
-      const playlistToLabelResponse = await z.request({
-        url: `https://api.screenlyapp.com/api/v4/labels/playlists?label_id=eq.${label.id}`,
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Token ${bundle.authData.api_key}`,
-          'Prefer': 'return=representation',
-        },
-      });
-
-      const playlistToLabelMappings = utils.handleError(playlistToLabelResponse, 'Failed to fetch playlist to labels');
-
-      const playListIds = playlistToLabelMappings
-        .map(mapping => mapping.playlist_id);
-
+      const playListIds = playlistToLabelMappings.map(mapping => mapping.playlist_id);
       let successfulDeletions = 0;
 
+      // Delete each playlist
       for (const playlistId of playListIds) {
-        const response = await z.request({
-          url: `https://api.screenlyapp.com/api/v4/playlists/?id=eq.${playlistId}/`,
-          method: 'DELETE',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Token ${bundle.authData.api_key}`,
-            'Prefer': 'return=representation',
-          },
-          skipThrowForStatus: true,
-        });
-
-        if (response.status === 200) {
+        const success = await utils.deletePlaylist(z, bundle, { playlistId });
+        if (success) {
           successfulDeletions++;
         }
       }

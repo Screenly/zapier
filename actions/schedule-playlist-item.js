@@ -37,34 +37,11 @@ const schedulePlaylistItem = {
     perform: async (z, bundle) => {
       await utils.waitForAssetReady(z, bundle.inputData.asset_id, bundle.authData.api_key);
 
-      // Now proceed with adding to playlist
-      const payload = {
-        asset_id: bundle.inputData.asset_id,
-        playlist_id: bundle.inputData.playlist_id,
-      };
-
-      if (bundle.inputData.duration) {
-        payload.duration = bundle.inputData.duration;
-      }
-
-      const response = await z.request({
-        url: 'https://api.screenlyapp.com/api/v4/playlist-items/',
-        method: 'POST',
-        headers: {
-          'Authorization': `Token ${bundle.authData.api_key}`,
-          'Content-Type': 'application/json',
-          'Prefer': 'return=representation',
-        },
-        body: payload,
+      return await utils.createPlaylistItem(z, bundle, {
+        assetId: bundle.inputData.asset_id,
+        playlistId: bundle.inputData.playlist_id,
+        duration: bundle.inputData.duration,
       });
-
-      const assets = utils.handleError(response, 'Failed to add asset to playlist');
-
-      if (assets.length === 0) {
-        throw new Error('No assets returned from the Screenly API');
-      }
-
-      return assets[0];
     },
     sample: {
       id: 1,
