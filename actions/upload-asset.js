@@ -25,28 +25,10 @@ const uploadAsset = {
       },
     ],
     perform: async (z, bundle) => {
-      const response = await z.request({
-        url: 'https://api.screenlyapp.com/api/v4/assets/',
-        method: 'POST',
-        headers: {
-          'Authorization': `Token ${bundle.authData.api_key}`,
-          'Content-Type': 'application/json',
-          'Prefer': 'return=representation',
-        },
-        body: {
-          title: bundle.inputData.title,
-          source_url: bundle.inputData.file,
-          disable_verification: false
-        },
+      return await utils.createAsset(z, bundle, {
+        title: bundle.inputData.title,
+        sourceUrl: bundle.inputData.file,
       });
-
-      const assets = utils.handleError(response, 'Failed to upload asset');
-
-      if (assets.length === 0) {
-        throw new Error('No assets returned from the Screenly API');
-      }
-
-      return assets[0];
     },
     sample: {
       id: 1,
