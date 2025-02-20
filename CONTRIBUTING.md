@@ -7,8 +7,8 @@ Thank you for your interest in contributing to the Screenly Zapier Integration! 
 1. Fork the repository
 2. Clone your fork:
    ```bash
-   git clone https://github.com/YOUR_USERNAME/screenly-zapier
-   cd screenly-zapier
+   git clone https://github.com/YOUR_USERNAME/zapier
+   cd zapier
    ```
 3. Install dependencies:
    ```bash
