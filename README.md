@@ -14,6 +14,8 @@ Screenly Zapier Integration
   </a>
 </p>
 
+<br>
+
 A Zapier [integration](https://zapier.com/apps/screenly/integrations) for automating Screenly digital signage operations. Connect your
 Screenly displays with 5000+ apps.
 
