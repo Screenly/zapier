@@ -126,6 +126,20 @@ These tests are skipped locally to avoid environment-specific issues.
    - Visual tests run on pull requests
    - CI checks must pass before merge
 
+## Setting up Zapier Deployment
+
+1. Get your Zapier Deploy Key:
+
+   ```bash
+   zapier login
+   zapier register "Screenly"  # Only needed for first-time setup
+   ```
+
+2. Add the deploy key to GitHub:
+   - Go to your repository's Settings > Secrets > Actions
+   - Add a new secret named `ZAPIER_DEPLOY_KEY`
+   - Paste your deploy key as the value
+
 ## Deployment
 
 The integration is automatically deployed to Zapier when a new version tag is pushed to GitHub.
@@ -141,19 +155,11 @@ The integration is automatically deployed to Zapier when a new version tag is pu
    - Run tests
    - Deploy to Zapier
 
-## Setting up Zapier Deployment
+If you wish to deploy the integration privately, you can do so by following the steps below.
 
-1. Get your Zapier Deploy Key:
-
-   ```bash
-   zapier login
-   zapier register "Screenly"  # Only needed for first-time setup
-   ```
-
-2. Add the deploy key to GitHub:
-   - Go to your repository's Settings > Secrets > Actions
-   - Add a new secret named `ZAPIER_DEPLOY_KEY`
-   - Paste your deploy key as the value
+```bash
+zapier push
+```
 
 ## Version Management
 
