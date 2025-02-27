@@ -155,7 +155,7 @@ The integration is automatically deployed to Zapier when a new version tag is pu
    - Run tests
    - Deploy to Zapier
 
-If you wish to deploy the integration privately, you can do so by following the steps below.
+If you wish to deploy the integration privately, you can do so by following the steps below, given that you have completed the [initial setup steps above](#setting-up-zapier-deployment).
 
 ```bash
 zapier push
