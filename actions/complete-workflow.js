@@ -81,8 +81,8 @@ const completeWorkflow = {
         const labelQueryResponse = await z.request({
           url: `https://api.screenlyapp.com/api/v4/labels?name=eq.${ZAPIER_TAG}`,
           headers: {
-            'Authorization': `Token ${bundle.authData.api_key}`,
-            'Prefer': 'return=representation',
+            Authorization: `Token ${bundle.authData.api_key}`,
+            Prefer: 'return=representation',
           },
         });
 
@@ -97,8 +97,8 @@ const completeWorkflow = {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'Authorization': `Token ${bundle.authData.api_key}`,
-              'Prefer': 'return=representation',
+              Authorization: `Token ${bundle.authData.api_key}`,
+              Prefer: 'return=representation',
             },
             body: {
               name: ZAPIER_TAG,

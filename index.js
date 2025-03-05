@@ -24,7 +24,8 @@ const authentication = {
       type: 'string',
       required: true,
       label: 'API Key',
-      helpText: 'See [this page](https://support.screenly.io/hc/en-us/articles/35897560148371-How-to-Generate-a-Screenly-API-Token) for a guide on how to generate an API key for your Screenly account.',
+      helpText:
+        'See [this page](https://support.screenly.io/hc/en-us/articles/35897560148371-How-to-Generate-a-Screenly-API-Token) for a guide on how to generate an API key for your Screenly account.',
     },
   ],
 };

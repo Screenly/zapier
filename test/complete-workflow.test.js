@@ -22,28 +22,30 @@ describe('Complete Workflow', () => {
       },
     };
 
-    nock('https://example.com')
-      .get('/test.jpg')
-      .reply(200, Buffer.from('fake-image-data'));
+    nock('https://example.com').get('/test.jpg').reply(200, Buffer.from('fake-image-data'));
 
     nock('https://api.screenlyapp.com')
       .post('/api/v4/assets/', {
         title: 'Test Asset',
         source_url: 'https://example.com/test.jpg',
-        disable_verification: false
+        disable_verification: false,
       })
-      .reply(201, [{
-        id: 'asset-123',
-        title: 'Test Asset',
-      }]);
+      .reply(201, [
+        {
+          id: 'asset-123',
+          title: 'Test Asset',
+        },
+      ]);
 
     nock('https://api.screenlyapp.com')
       .get('/api/v4/assets?id=eq.asset-123')
       .matchHeader('Authorization', `Token ${TEST_API_KEY}`)
-      .reply(200, [{
-        id: 'asset-123',
-        status: 'finished',
-      }]);
+      .reply(200, [
+        {
+          id: 'asset-123',
+          status: 'finished',
+        },
+      ]);
 
     nock('https://api.screenlyapp.com')
       .post('/api/v4/playlist-items/', {
@@ -58,7 +60,7 @@ describe('Complete Workflow', () => {
     nock('https://api.screenlyapp.com')
       .post('/api/v4/labels/playlists', {
         playlist_id: 'playlist-123',
-        label_id: 'screen-123'
+        label_id: 'screen-123',
       })
       .reply(409); // Simulate already assigned
 
@@ -80,26 +82,28 @@ describe('Complete Workflow', () => {
       },
     };
 
-    nock('https://example.com')
-      .get('/test.jpg')
-      .reply(200, Buffer.from('fake-image-data'));
+    nock('https://example.com').get('/test.jpg').reply(200, Buffer.from('fake-image-data'));
 
     nock('https://api.screenlyapp.com')
       .post('/api/v4/assets/')
-      .reply(201, [{
-        id: 'asset-123',
-        title: 'Test Asset',
-      }]);
+      .reply(201, [
+        {
+          id: 'asset-123',
+          title: 'Test Asset',
+        },
+      ]);
 
     nock('https://api.screenlyapp.com')
       .post('/api/v4/playlists', {
         title: 'New Playlist',
-        predicate: new RegExp('TRUE AND \\(\\$DATE >= \\d+\\)')
+        predicate: new RegExp('TRUE AND \\(\\$DATE >= \\d+\\)'),
       })
-      .reply(201, [{
-        id: 'playlist-123',
-        name: 'New Playlist',
-      }]);
+      .reply(201, [
+        {
+          id: 'playlist-123',
+          name: 'New Playlist',
+        },
+      ]);
 
     nock('https://api.screenlyapp.com')
       .get('/api/v4/labels?name=eq.created_by_zapier')
@@ -107,26 +111,28 @@ describe('Complete Workflow', () => {
 
     nock('https://api.screenlyapp.com')
       .post('/api/v4/labels/', {
-        name: 'created_by_zapier'
+        name: 'created_by_zapier',
       })
       .reply(201, {
-        id: 'label-123'
+        id: 'label-123',
       });
 
     nock('https://api.screenlyapp.com')
       .post('/api/v4/labels/playlists', {
         playlist_id: 'playlist-123',
-        label_id: 'label-123'
+        label_id: 'label-123',
       })
       .reply(201);
 
     nock('https://api.screenlyapp.com')
       .get('/api/v4/assets?id=eq.asset-123')
       .matchHeader('Authorization', `Token ${TEST_API_KEY}`)
-      .reply(200, [{
-        id: 'asset-123',
-        status: 'finished',
-      }]);
+      .reply(200, [
+        {
+          id: 'asset-123',
+          status: 'finished',
+        },
+      ]);
 
     nock('https://api.screenlyapp.com')
       .post('/api/v4/playlist-items/', {
@@ -141,7 +147,7 @@ describe('Complete Workflow', () => {
     nock('https://api.screenlyapp.com')
       .post('/api/v4/labels/playlists', {
         playlist_id: 'playlist-123',
-        label_id: 'screen-123'
+        label_id: 'screen-123',
       })
       .reply(201);
 

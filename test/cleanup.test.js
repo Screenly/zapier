@@ -24,10 +24,12 @@ describe('Cleanup', () => {
     nock('https://api.screenlyapp.com')
       .get('/api/v4/labels/?name=eq.created_by_zapier')
       .matchHeader('Authorization', `Token ${TEST_API_KEY}`)
-      .reply(200, [{
-        id: 'label-123',
-        name: 'created_by_zapier'
-      }]);
+      .reply(200, [
+        {
+          id: 'label-123',
+          name: 'created_by_zapier',
+        },
+      ]);
 
     // Mock playlist to label mappings
     nock('https://api.screenlyapp.com')
@@ -35,7 +37,7 @@ describe('Cleanup', () => {
       .matchHeader('Authorization', `Token ${TEST_API_KEY}`)
       .reply(200, [
         { playlist_id: 'playlist-1', label_id: 'label-123' },
-        { playlist_id: 'playlist-2', label_id: 'label-123' }
+        { playlist_id: 'playlist-2', label_id: 'label-123' },
       ]);
 
     // Mock playlist deletions

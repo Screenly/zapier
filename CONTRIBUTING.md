@@ -27,11 +27,13 @@ Thank you for your interest in contributing to the Screenly Zapier Integration! 
 ## Development Workflow
 
 1. Create a new branch for your feature/fix:
+
    ```bash
    git checkout -b feature/your-feature-name
    ```
 
 1. Make your changes and ensure:
+
    - All tests pass: `npm test`
    - Code is properly linted: `npm run lint`
    - Security audit passes: `npm audit`

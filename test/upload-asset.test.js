@@ -31,7 +31,7 @@ describe('Upload Asset', () => {
           id: 'asset-123',
           title: 'Test Image',
           duration: null,
-        }
+        },
       ]);
 
     const response = await appTester(App.creates.upload_asset.operation.perform, bundle);
