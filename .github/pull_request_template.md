@@ -2,9 +2,9 @@
 
 Please include a summary of the changes and which issue is fixed. Please also include relevant motivation and context.
 
-* Fixes #(issue-1)
-* Fixes #(issue-2)
-* Fixes #(issue-n)
+- Fixes #(issue-1)
+- Fixes #(issue-2)
+- Fixes #(issue-n)
 
 ### How Has This Been Tested?
 

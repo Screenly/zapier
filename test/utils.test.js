@@ -13,7 +13,7 @@ describe('Utils', () => {
       const z = {
         request: jest.fn().mockResolvedValue({
           status: 200,
-          json: [{ id: 'label-123', name: 'test-label' }]
+          json: [{ id: 'label-123', name: 'test-label' }],
         }),
         authData: { api_key: TEST_API_KEY },
       };
@@ -28,14 +28,15 @@ describe('Utils', () => {
       const z = {
         request: jest.fn().mockResolvedValue({
           status: 200,
-          json: []
+          json: [],
         }),
         authData: { api_key: TEST_API_KEY },
       };
       const bundle = { authData: { api_key: TEST_API_KEY } };
 
-      await expect(utils.getLabel(z, bundle, { name: 'test-label' }))
-        .rejects.toThrow('No labels returned from the Screenly API');
+      await expect(utils.getLabel(z, bundle, { name: 'test-label' })).rejects.toThrow(
+        'No labels returned from the Screenly API'
+      );
     });
   });
 
@@ -44,10 +45,7 @@ describe('Utils', () => {
       const z = {
         request: jest.fn().mockResolvedValue({
           status: 200,
-          json: [
-            { playlist_id: 'playlist-1' },
-            { playlist_id: 'playlist-2' },
-          ]
+          json: [{ playlist_id: 'playlist-1' }, { playlist_id: 'playlist-2' }],
         }),
         authData: { api_key: TEST_API_KEY },
       };
@@ -62,14 +60,15 @@ describe('Utils', () => {
       const z = {
         request: jest.fn().mockResolvedValue({
           status: 404,
-          json: { error: 'Not found' }
+          json: { error: 'Not found' },
         }),
         authData: { api_key: TEST_API_KEY },
       };
       const bundle = { authData: { api_key: TEST_API_KEY } };
 
-      await expect(utils.getPlaylistsByLabel(z, bundle, { labelId: 'label-123' }))
-        .rejects.toThrow('Failed to fetch playlist to labels');
+      await expect(utils.getPlaylistsByLabel(z, bundle, { labelId: 'label-123' })).rejects.toThrow(
+        'Failed to fetch playlist to labels'
+      );
     });
   });
 
@@ -78,7 +77,7 @@ describe('Utils', () => {
       const z = {
         request: jest.fn().mockResolvedValue({
           status: 200,
-          json: {}
+          json: {},
         }),
         authData: { api_key: TEST_API_KEY },
       };
@@ -92,7 +91,7 @@ describe('Utils', () => {
       const z = {
         request: jest.fn().mockResolvedValue({
           status: 404,
-          json: { error: 'Not found' }
+          json: { error: 'Not found' },
         }),
         authData: { api_key: TEST_API_KEY },
       };
@@ -108,11 +107,13 @@ describe('Utils', () => {
       const z = {
         request: jest.fn().mockResolvedValue({
           status: 201,
-          json: [{
-            id: 'playlist-123',
-            title: 'Test Playlist',
-            predicate: 'TRUE',
-          }]
+          json: [
+            {
+              id: 'playlist-123',
+              title: 'Test Playlist',
+              predicate: 'TRUE',
+            },
+          ],
         }),
         authData: { api_key: TEST_API_KEY },
       };
@@ -130,30 +131,33 @@ describe('Utils', () => {
       const z = {
         request: jest.fn().mockResolvedValue({
           status: 201,
-          json: []
+          json: [],
         }),
         authData: { api_key: TEST_API_KEY },
       };
       const bundle = { authData: { api_key: TEST_API_KEY } };
 
-      await expect(utils.createPlaylist(z, bundle, {
-        title: 'Test Playlist',
-        predicate: 'TRUE',
-      })).rejects.toThrow('No playlists returned from the Screenly API');
+      await expect(
+        utils.createPlaylist(z, bundle, {
+          title: 'Test Playlist',
+          predicate: 'TRUE',
+        })
+      ).rejects.toThrow('No playlists returned from the Screenly API');
     });
   });
 
   describe('waitForAssetReady', () => {
     it('waits for asset to be ready', async () => {
       const z = {
-        request: jest.fn()
+        request: jest
+          .fn()
           .mockResolvedValueOnce({
             status: 200,
-            json: [{ status: '' }]
+            json: [{ status: '' }],
           })
           .mockResolvedValueOnce({
             status: 200,
-            json: [{ status: 'finished' }]
+            json: [{ status: 'finished' }],
           }),
         console: { log: jest.fn() },
       };

@@ -28,10 +28,10 @@ const cleanupZapierContent = {
 
       // Get all playlists associated with the Zapier tag
       const playlistToLabelMappings = await utils.getPlaylistsByLabel(z, bundle, {
-        labelId: label.id
+        labelId: label.id,
       });
 
-      const playListIds = playlistToLabelMappings.map(mapping => mapping.playlist_id);
+      const playListIds = playlistToLabelMappings.map((mapping) => mapping.playlist_id);
       let successfulDeletions = 0;
 
       // Delete each playlist

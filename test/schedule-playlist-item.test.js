@@ -25,23 +25,27 @@ describe('Schedule Playlist Item', () => {
     nock('https://api.screenlyapp.com')
       .get('/api/v4/assets?id=eq.asset-123')
       .matchHeader('Authorization', `Token ${TEST_API_KEY}`)
-      .reply(200, [{
-        id: 'asset-123',
-        status: 'finished'
-      }]);
+      .reply(200, [
+        {
+          id: 'asset-123',
+          status: 'finished',
+        },
+      ]);
 
     nock('https://api.screenlyapp.com')
       .post('/api/v4/playlist-items/', {
         asset_id: 'asset-123',
         playlist_id: 'playlist-123',
-        duration: 15
+        duration: 15,
       })
       .matchHeader('Authorization', `Token ${TEST_API_KEY}`)
-      .reply(201, [{
-        id: 'item-123',
-        playlist_id: 'playlist-123',
-        asset_id: 'asset-123'
-      }]);
+      .reply(201, [
+        {
+          id: 'item-123',
+          playlist_id: 'playlist-123',
+          asset_id: 'asset-123',
+        },
+      ]);
 
     const response = await appTester(App.creates.schedule_playlist_item.operation.perform, bundle);
     expect(response.id).toBe('item-123');
@@ -62,23 +66,27 @@ describe('Schedule Playlist Item', () => {
     nock('https://api.screenlyapp.com')
       .get('/api/v4/assets?id=eq.asset-123')
       .matchHeader('Authorization', `Token ${TEST_API_KEY}`)
-      .reply(200, [{
-        id: 'asset-123',
-        status: 'finished'
-      }]);
+      .reply(200, [
+        {
+          id: 'asset-123',
+          status: 'finished',
+        },
+      ]);
 
     nock('https://api.screenlyapp.com')
       .post('/api/v4/playlist-items/', {
         asset_id: 'asset-123',
         playlist_id: 'playlist-123',
-        duration: 20
+        duration: 20,
       })
       .matchHeader('Authorization', `Token ${TEST_API_KEY}`)
-      .reply(201, [{
-        id: 'item-123',
-        playlist_id: 'playlist-123',
-        asset_id: 'asset-123'
-      }]);
+      .reply(201, [
+        {
+          id: 'item-123',
+          playlist_id: 'playlist-123',
+          asset_id: 'asset-123',
+        },
+      ]);
 
     const response = await appTester(App.creates.schedule_playlist_item.operation.perform, bundle);
     expect(response.id).toBe('item-123');

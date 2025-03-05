@@ -45,6 +45,7 @@
     - Disable rain-specific promotions
 
 ### Setup Steps:
+
 1. Create weather-specific playlists in Screenly:
    - "Summer Treats" - cold items
    - "Winter Warmers" - hot items
