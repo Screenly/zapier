@@ -38,7 +38,6 @@ const waitForAssetReady = async (z, assetId, authToken) => {
 
     // Log status for debugging
     z.console.log(`Asset ${assetId} status: ${assetStatus}`);
-
   } while (!READY_STATES.includes(assetStatus));
 
   return assetStatus;
@@ -49,14 +48,14 @@ const createAsset = async (z, bundle, { title, sourceUrl, disableVerification = 
     url: 'https://api.screenlyapp.com/api/v4/assets/',
     method: 'POST',
     headers: {
-      'Authorization': `Token ${bundle.authData.api_key}`,
+      Authorization: `Token ${bundle.authData.api_key}`,
       'Content-Type': 'application/json',
-      'Prefer': 'return=representation',
+      Prefer: 'return=representation',
     },
     body: {
       title,
       source_url: sourceUrl,
-      disable_verification: disableVerification
+      disable_verification: disableVerification,
     },
   });
 
@@ -83,9 +82,9 @@ const createPlaylistItem = async (z, bundle, { assetId, playlistId, duration }) 
     url: 'https://api.screenlyapp.com/api/v4/playlist-items/',
     method: 'POST',
     headers: {
-      'Authorization': `Token ${bundle.authData.api_key}`,
+      Authorization: `Token ${bundle.authData.api_key}`,
       'Content-Type': 'application/json',
-      'Prefer': 'return=representation',
+      Prefer: 'return=representation',
     },
     body: payload,
   });
@@ -105,8 +104,8 @@ const assignPlaylistToScreen = async (z, bundle, { screenId, playlistId }) => {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Token ${bundle.authData.api_key}`,
-      'Prefer': 'return=representation',
+      Authorization: `Token ${bundle.authData.api_key}`,
+      Prefer: 'return=representation',
     },
     body: {
       playlist_id: playlistId,
@@ -134,8 +133,8 @@ const createPlaylist = async (z, bundle, { title, predicate }) => {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Token ${bundle.authData.api_key}`,
-      'Prefer': 'return=representation',
+      Authorization: `Token ${bundle.authData.api_key}`,
+      Prefer: 'return=representation',
     },
     body: {
       title,
@@ -155,7 +154,7 @@ const createPlaylist = async (z, bundle, { title, predicate }) => {
 const getLabel = async (z, bundle, { name }) => {
   const queryParams = { name: `eq.${name}` };
   const queryString = Object.keys(queryParams)
-    .map(key => `${key}=${queryParams[key]}`)
+    .map((key) => `${key}=${queryParams[key]}`)
     .join('&');
 
   const response = await z.request({
@@ -163,8 +162,8 @@ const getLabel = async (z, bundle, { name }) => {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Token ${bundle.authData.api_key}`,
-      'Prefer': 'return=representation',
+      Authorization: `Token ${bundle.authData.api_key}`,
+      Prefer: 'return=representation',
     },
   });
 
@@ -181,8 +180,8 @@ const getPlaylistsByLabel = async (z, bundle, { labelId }) => {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Token ${bundle.authData.api_key}`,
-      'Prefer': 'return=representation',
+      Authorization: `Token ${bundle.authData.api_key}`,
+      Prefer: 'return=representation',
     },
   });
 
@@ -195,8 +194,8 @@ const deletePlaylist = async (z, bundle, { playlistId }) => {
     method: 'DELETE',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Token ${bundle.authData.api_key}`,
-      'Prefer': 'return=representation',
+      Authorization: `Token ${bundle.authData.api_key}`,
+      Prefer: 'return=representation',
     },
     skipThrowForStatus: true,
   });
