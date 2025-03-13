@@ -15,17 +15,19 @@ Screenly Zapier Integration
 A Zapier [integration](https://zapier.com/apps/screenly/integrations) for automating Screenly digital signage operations. Connect your
 Screenly displays with 5000+ apps.
 
-## :rocket: Quick Start
+## :rocket: Getting Started
 
-You can start by creating a new workflow that will create a new Screenly asset when a new file is uploaded to a specific folder in your Google Drive. Please see this [guide](/docs/cookbook/uploading-an-asset-via-google-drive.md) for details.
+Check out our tutorials for getting started with the Screenly Zapier integration:
+
+- [Manage digital signage content with Box & Zapier](https://www.screenly.io/tutorials/box/)
+- [Use Dropbox & Zapier to manage digital signage content](https://www.screenly.io/tutorials/dropbox/)
+- [Use Google Drive to manage Screenly via Zapier](https://www.screenly.io/tutorials/google-drive/)
 
 ## :zap: Quick Links
 
 - [Available Actions](docs/available-actions.md)
 - [Developer Documentation](docs/developer-documentation.md)
 - [Common Use Cases](docs/common-use-cases.md)
-- [Example Integrations](docs/example-integrations.md)
-- [Cookbook](docs/cookbook/README.md)
 
 ## :lock: Security
 
