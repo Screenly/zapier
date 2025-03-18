@@ -16,8 +16,8 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "prepare": "npx husky",
-    "clean": "rimraf coverage __image_snapshots__",
-    "build": "tsc"
+    "clean": "rimraf coverage __image_snapshots__ dist",
+    "build": "npm run clean && tsc"
   },
   "lint-staged": "{\"*.{js,jsx,ts,tsx}\": [\"eslint --fix\", \"prettier --write\"]}",
   "private": true,
