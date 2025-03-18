@@ -2,22 +2,22 @@
   "name": "zapier-screenly",
   "version": "0.5.0",
   "description": "Screenly integration for Zapier platform",
-  "main": "index.js",
-  "type": "commonjs",
+  "main": "dist/index.js",
+  "type": "module",
   "engines": {
     "node": ">=20"
   },
   "scripts": {
-    "test": "jest --config=jest.config.js --coverage",
-    "test:watch": "jest --watch",
-    "test:visual": "echo 'Visual tests are only run in CI environment' && CI=true jest --config=jest.visual.config.js",
-    "test:visual:ci": "jest --config=jest.visual.config.js",
+    "test": "vitest run --config vitest.config.ts",
+    "test:watch": "vitest --config vitest.config.ts --watch",
+    "test:visual": "echo 'Visual tests are only run in CI environment' && CI=true vitest run --config vitest.visual.config.ts",
+    "test:visual:ci": "vitest run --config vitest.visual.config.ts",
     "deploy": "zapier push",
     "lint": "eslint .",
     "format": "prettier --write .",
     "prepare": "npx husky",
     "clean": "rimraf coverage __image_snapshots__",
-    "build": "echo 'No build step needed'"
+    "build": "tsc"
   },
   "lint-staged": "{\"*.{js,jsx,ts,tsx}\": [\"eslint --fix\", \"prettier --write\"]}",
   "private": true,
@@ -29,31 +29,16 @@
     "zapier-platform-core": "16.3.0"
   },
   "devDependencies": {
-    "@babel/core": "^7.26.0",
-    "@babel/preset-env": "^7.26.0",
-    "babel-jest": "^29.7.0",
+    "@vitest/coverage-v8": "^3.0.8",
     "eslint": "^8.57.1",
     "husky": "^9.1.7",
-    "jest": "^29.7.0",
-    "jest-circus": "^29.7.0",
-    "jest-environment-jsdom": "^29.7.0",
-    "jest-environment-node": "^29.7.0",
     "jest-image-snapshot": "^6.4.0",
     "lint-staged": "^15.2.10",
     "markdownlint-cli": "^0.43.0",
     "nock": "^13.5.6",
     "prettier": "^3.4.2",
-    "puppeteer": "^23.10.1"
-  },
-  "jest": {
-    "testEnvironment": "node",
-    "transform": {
-      "\\\\^": {
-        "+\\\\": {
-          "js$": "babel-jest"
-        }
-      }
-    },
-    "transformIgnorePatterns": "[\"node_modules/(?!(node-fetch|fetch-blob|formdata-polyfill|data-uri-to-buffer|web-streams-polyfill)/)\"]"
+    "puppeteer": "^23.10.1",
+    "typescript": "^5.8.2",
+    "vitest": "^3.0.8"
   }
 }

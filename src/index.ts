@@ -1,12 +1,14 @@
-const uploadAsset = require('./actions/upload-asset');
-const schedulePlaylistItem = require('./actions/schedule-playlist-item');
-const assignScreenToPlaylist = require('./actions/assign-screen-to-playlist');
-const completeWorkflow = require('./actions/complete-workflow');
-const cleanupZapierContent = require('./actions/cleanup-zapier-content');
+import uploadAsset from './actions/upload-asset.js';
+import schedulePlaylistItem from './actions/schedule-playlist-item.js';
+import assignScreenToPlaylist from './actions/assign-screen-to-playlist.js';
+import completeWorkflow from './actions/complete-workflow.js';
+import cleanupZapierContent from './actions/cleanup-zapier-content.js';
+import { getScreens } from './triggers/get-screens.js';
+import { getPlaylists } from './triggers/get-playlists.js';
+import { getAssets } from './triggers/get-assets.js';
+import zappierCore from 'zapier-platform-core';
 
-const { getScreens } = require('./triggers/get-screens');
-const { getPlaylists } = require('./triggers/get-playlists');
-const { getAssets } = require('./triggers/get-assets');
+import pkg from '../package.json' with { type: 'json' };
 
 // Authentication setup
 const authentication = {
@@ -31,9 +33,9 @@ const authentication = {
 };
 
 // Export the app definition
-module.exports = {
-  version: require('./package.json').version,
-  platformVersion: require('zapier-platform-core').version,
+export default {
+  version: pkg.version,
+  platformVersion: zappierCore.version,
 
   authentication,
 

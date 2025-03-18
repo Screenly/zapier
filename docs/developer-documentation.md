@@ -55,7 +55,7 @@ The project uses several tools to ensure code quality:
 
 - **ESLint** - For code linting
 - **Prettier** - For code formatting
-- **Jest** - For testing
+- **Vitest** - For testing
 - **Husky** - For git hooks
 - **lint-staged** - For running checks on staged files
 - **markdownlint** - For markdown formatting

@@ -1,11 +1,12 @@
-const utils = require('../utils');
+import utils from '../src/utils.js';
+import { describe, test, vi, expect } from 'vitest';
 
 const TEST_API_KEY = 'valid-api-key';
 
 describe('Helper Functions', () => {
   test('makeRequest handles error response', async () => {
     const z = {
-      request: jest.fn().mockResolvedValue({
+      request: vi.fn().mockResolvedValue({
         status: 404,
         json: { error: 'Not found' },
       }),
@@ -31,7 +32,7 @@ describe('Helper Functions', () => {
 
   test('makeRequest includes custom headers', async () => {
     const z = {
-      request: jest.fn().mockResolvedValue({
+      request: vi.fn().mockResolvedValue({
         status: 200,
         json: { data: 'test' },
       }),

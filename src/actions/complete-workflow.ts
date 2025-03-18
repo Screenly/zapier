@@ -1,5 +1,5 @@
-const utils = require('../utils');
-const { ZAPIER_TAG } = require('../constants');
+import utils from '../utils.js';
+import { ZAPIER_TAG } from '../constants.js';
 
 const completeWorkflow = {
   key: 'complete_workflow',
@@ -56,7 +56,7 @@ const completeWorkflow = {
         helpText: 'Select the screen to assign',
       },
     ],
-    perform: async (z, bundle) => {
+    perform: async (z: any, bundle: any) => {
       if (!bundle.inputData.playlist_id && !bundle.inputData.new_playlist_name) {
         throw new Error('Either select an existing playlist or provide a name for a new one');
       }
@@ -86,7 +86,7 @@ const completeWorkflow = {
           },
         });
 
-        let labelId;
+        let labelId: any;
         const existingLabels = labelQueryResponse.json;
 
         if (existingLabels.length > 0) {
@@ -145,4 +145,4 @@ const completeWorkflow = {
   },
 };
 
-module.exports = completeWorkflow;
+export default completeWorkflow;

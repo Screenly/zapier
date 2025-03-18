@@ -1,5 +1,5 @@
-const utils = require('../utils');
-const { ZAPIER_TAG } = require('../constants');
+import utils from '../utils.js';
+import { ZAPIER_TAG } from '../constants.js';
 
 const cleanupZapierContent = {
   key: 'cleanup_zapier_content',
@@ -18,7 +18,7 @@ const cleanupZapierContent = {
         helpText: 'Are you sure you want to remove all content created by Zapier?',
       },
     ],
-    perform: async (z, bundle) => {
+    perform: async (z: any, bundle: any) => {
       if (!bundle.inputData.confirm) {
         throw new Error('Please confirm the cleanup operation');
       }
@@ -31,7 +31,7 @@ const cleanupZapierContent = {
         labelId: label.id,
       });
 
-      const playListIds = playlistToLabelMappings.map((mapping) => mapping.playlist_id);
+      const playListIds = playlistToLabelMappings.map((mapping: any) => mapping.playlist_id);
       let successfulDeletions = 0;
 
       // Delete each playlist
@@ -54,4 +54,4 @@ const cleanupZapierContent = {
   },
 };
 
-module.exports = cleanupZapierContent;
+export default cleanupZapierContent;
