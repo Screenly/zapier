@@ -33,7 +33,7 @@ jobs:
       - name: Run tests with mocks
         run: |
           # Run tests with coverage
-          npm run test -- --coverage
+          npm run test -- --coverage.enabled --coverage.reporter=json-summary --coverage.reporter=text
 
           # Generate test summary
           {
