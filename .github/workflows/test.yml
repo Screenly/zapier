@@ -25,12 +25,6 @@ jobs:
           sudo apt-get install -y libgbm-dev jq xvfb
           npm ci
 
-      # TODO: disable linting for now, so that does not block any process
-      # - name: Lint
-      #   run: |
-      #     npm run lint
-      #     npm run format -- --check
-
       - name: Install Chrome
         uses: browser-actions/setup-chrome@latest
         with:
