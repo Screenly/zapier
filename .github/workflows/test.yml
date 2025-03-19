@@ -67,7 +67,7 @@ jobs:
       - name: Run visual tests
         run: |
           mkdir -p __image_snapshots__
-          CHROME_PATH="$(which chrome)" xvfb-run --auto-servernum --server-args="-screen 0 1280x800x24" npm run test:visual:ci -- -u --json --outputFile=visual-test-results.json
+          CHROME_PATH="$(which chrome)" xvfb-run --auto-servernum --server-args="-screen 0 1280x800x24" npm run test:visual:ci -- -u --reporter=json > visual-test-results.json
 
           # Show test results and screenshots
           {
@@ -75,7 +75,7 @@ jobs:
               echo "## Visual Test Results"
               echo "| Total | Passed | Failed | Skipped |"
               echo "|-------|---------|---------|----------|"
-              jq -r '"| \(.numTotalTests) | \(.numPassedTests) | \(.numFailedTests) | \(.numPendingTests) |"' visual-test-results.json
+              jq -r '.testResults | "| \(.numTotalTests // 0) | \(.numPassedTests // 0) | \(.numFailedTests // 0) | \(.numPendingTests // 0) |"' visual-test-results.json || echo "| - | - | - | - |"
               echo ""
             fi
 
