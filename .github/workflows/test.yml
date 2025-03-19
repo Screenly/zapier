@@ -32,26 +32,22 @@ jobs:
 
       - name: Run tests with mocks
         run: |
-          # Run tests with coverage and capture results in JSON format
-          npm run test -- --coverage --reporter=json --reporter=default > test-results.json
+          # Run tests with coverage
+          npm run test -- --coverage
 
-          # Extract coverage and test results
+          # Generate test summary
           {
             echo "# Test Results (Node ${{ matrix.node-version }})"
             echo "## Coverage"
             echo "| Type | Coverage | Details |"
             echo "|------|----------|----------|"
 
-            # Use jq to parse the coverage JSON from Vitest's output
-            jq -r '.coverage.summary |
-              "| Statements | \(.statements.pct)% | \(.statements.covered)/\(.statements.total) |\n| Branches | \(.branches.pct)% | \(.branches.covered)/\(.branches.total) |\n| Functions | \(.functions.pct)% | \(.functions.covered)/\(.functions.total) |\n| Lines | \(.lines.pct)% | \(.lines.covered)/\(.lines.total) |"' test-results.json || {
+            # Parse the coverage summary file
+            jq -r '.total |
+              "| Statements | \(.statements.pct)% | \(.statements.covered)/\(.statements.total) |\n| Branches | \(.branches.pct)% | \(.branches.covered)/\(.branches.total) |\n| Functions | \(.functions.pct)% | \(.functions.covered)/\(.functions.total) |\n| Lines | \(.lines.pct)% | \(.lines.covered)/\(.lines.total) |"' coverage/coverage-summary.json || {
                 echo "| Coverage data not available | - | - |"
               }
 
-            echo "## Test Results"
-            echo "| Total | Passed | Failed | Skipped |"
-            echo "|-------|---------|---------|----------|"
-            jq -r '.testResults | "| \(.numTotalTests) | \(.numPassedTests) | \(.numFailedTests) | \(.numPendingTests) |"' test-results.json
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Live API sanity check
