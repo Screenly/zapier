@@ -44,4 +44,4 @@ jobs:
       - name: Deploy to Zapier
         env:
           ZAPIER_DEPLOY_KEY: ${{ secrets.ZAPIER_DEPLOY_KEY }}
-        run: zapier push
+        run: npm run build && zapier push
