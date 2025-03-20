@@ -6,7 +6,7 @@ import cleanupZapierContent from './actions/cleanup-zapier-content.js';
 import { getScreens } from './triggers/get-screens.js';
 import { getPlaylists } from './triggers/get-playlists.js';
 import { getAssets } from './triggers/get-assets.js';
-import zappierCore from 'zapier-platform-core';
+import zapierCore from 'zapier-platform-core';
 
 import pkg from '../package.json';
 
