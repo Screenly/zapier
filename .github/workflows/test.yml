@@ -33,7 +33,7 @@ jobs:
       - name: Run tests with mocks
         run: |
           # Run tests with coverage and capture results in JSON format
-          npm test -- --coverage-reporters=lcov --coverage-reporters=json-summary --json --outputFile=test-results.json
+          npm test -- --coverage.reporter=lcov --coverage.reporter=json --outputFile.json=test-results.json
 
           # Extract coverage and test results
           {
@@ -71,7 +71,7 @@ jobs:
       - name: Run visual tests
         run: |
           mkdir -p __image_snapshots__
-          CHROME_PATH="$(which chrome)" xvfb-run --auto-servernum --server-args="-screen 0 1280x800x24" npm run test:visual:ci -- -u --json --outputFile=visual-test-results.json
+          CHROME_PATH="$(which chrome)" xvfb-run --auto-servernum --server-args="-screen 0 1280x800x24" npm run test:visual:ci -- --update --coverage.reporter=json --outputFile.json=visual-test-results.json
 
           # Show test results and screenshots
           {
