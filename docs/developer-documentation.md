@@ -142,6 +142,14 @@ These tests are skipped locally to avoid environment-specific issues.
 
 ## Deployment
 
+Compile the TypeScript code so that JavaScript code will be generated:
+
+```
+npm run build
+```
+
+The command will create a new folder called `dist/`, which is referenced by `index.js`.
+
 The integration is automatically deployed to Zapier when a new version tag is pushed to GitHub.
 
 1. Create and push a new version tag:
