@@ -35,7 +35,7 @@ const authentication = {
 // Export the app definition
 export default {
   version: pkg.version,
-  platformVersion: zappierCore.version,
+  platformVersion: zapierCore.version,
 
   authentication,
 
