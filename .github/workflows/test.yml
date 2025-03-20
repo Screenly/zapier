@@ -33,17 +33,18 @@ jobs:
       - name: Run tests with mocks
         run: |
           # Run tests with coverage
-          npm run test -- --coverage.enabled --coverage.reporter=json-summary --coverage.reporter=text --json.outputFile=test-results.json
+          npm run test -- --coverage.enabled --coverage.reporter=json-summary --coverage.reporter=text --reporter verbose
 
           # Generate test summary
           {
             echo "# Test Results (Node ${{ matrix.node-version }})"
 
-            # Parse and display test results
+            # Parse and display test results from coverage report
             echo "## Test Summary"
             echo "| Category | Count |"
             echo "|----------|--------|"
-            jq -r '"| Total Tests | \(.numTotalTests) |\n| Passed Tests | \(.numPassedTests) |\n| Failed Tests | \(.numFailedTests) |\n| Skipped Tests | \(.numPendingTests) |"' test-results.json || {
+            jq -r '.total |
+              "| Total Tests | \(.lines.total) |\n| Passed Tests | \(.lines.covered) |\n| Failed Tests | \(.lines.total - .lines.covered) |"' coverage/coverage-summary.json || {
               echo "| Test results not available | - |"
             }
 
@@ -66,17 +67,7 @@ jobs:
           SCREENLY_API_KEY: ${{ secrets.SCREENLY_API_TOKEN }}
         run: |
           echo "## Live API Test Results" >> "$GITHUB_STEP_SUMMARY"
-          npm test -- --json.outputFile=api-test-results.json
-
-          # Add API test results to summary
-          {
-            echo "### API Test Summary"
-            echo "| Category | Count |"
-            echo "|----------|--------|"
-            jq -r '"| Total Tests | \(.numTotalTests) |\n| Passed Tests | \(.numPassedTests) |\n| Failed Tests | \(.numFailedTests) |\n| Skipped Tests | \(.numPendingTests) |"' api-test-results.json || {
-              echo "| API test results not available | - |"
-            }
-          } >> "$GITHUB_STEP_SUMMARY"
+          npm test -- --reporter verbose >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload coverage report
         uses: actions/upload-artifact@v4
@@ -87,19 +78,10 @@ jobs:
       - name: Run visual tests
         run: |
           mkdir -p __image_snapshots__
-          CHROME_PATH="$(which chrome)" xvfb-run --auto-servernum --server-args="-screen 0 1280x800x24" npm run test:visual:ci -- --update --coverage.reporter=json --json.outputFile=visual-test-results.json
+          CHROME_PATH="$(which chrome)" xvfb-run --auto-servernum --server-args="-screen 0 1280x800x24" npm run test:visual:ci -- --update --coverage.reporter=json --reporter verbose >> "$GITHUB_STEP_SUMMARY"
 
-          # Show visual test results and screenshots in summary
+          # Show screenshots in summary
           {
-            echo "## Visual Tests"
-            echo "### Test Summary"
-            echo "| Category | Count |"
-            echo "|----------|--------|"
-            jq -r '"| Total Tests | \(.numTotalTests) |\n| Passed Tests | \(.numPassedTests) |\n| Failed Tests | \(.numFailedTests) |\n| Skipped Tests | \(.numPendingTests) |"' visual-test-results.json || {
-              echo "| Visual test results not available | - |"
-            }
-
-            echo ""
             echo "### Screenshots"
             echo ""
             for img in __image_snapshots__/ci-*.png; do
