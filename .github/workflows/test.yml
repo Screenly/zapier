@@ -32,26 +32,33 @@ jobs:
 
       - name: Run tests with mocks
         run: |
-          # Run tests with coverage and capture results in JSON format
-          npm test -- --coverage-reporters=lcov --coverage-reporters=json-summary --json --outputFile=test-results.json
+          # Run tests with coverage
+          npm run test -- --coverage.enabled --coverage.reporter=json-summary --coverage.reporter=text --reporter verbose
 
-          # Extract coverage and test results
+          # Generate test summary
           {
             echo "# Test Results (Node ${{ matrix.node-version }})"
+
+            # Parse and display test results from coverage report
+            echo "## Test Summary"
+            echo "| Category | Count |"
+            echo "|----------|--------|"
+            jq -r '.total |
+              "| Total Tests | \(.lines.total) |\n| Passed Tests | \(.lines.covered) |\n| Failed Tests | \(.lines.total - .lines.covered) |"' coverage/coverage-summary.json || {
+              echo "| Test results not available | - |"
+            }
+
+            echo ""
             echo "## Coverage"
             echo "| Type | Coverage | Details |"
             echo "|------|----------|----------|"
 
-            # Use jq to parse the coverage JSON
+            # Parse the coverage summary file
             jq -r '.total |
               "| Statements | \(.statements.pct)% | \(.statements.covered)/\(.statements.total) |\n| Branches | \(.branches.pct)% | \(.branches.covered)/\(.branches.total) |\n| Functions | \(.functions.pct)% | \(.functions.covered)/\(.functions.total) |\n| Lines | \(.lines.pct)% | \(.lines.covered)/\(.lines.total) |"' coverage/coverage-summary.json || {
                 echo "| Coverage data not available | - | - |"
               }
 
-            echo "## Test Results"
-            echo "| Total | Passed | Failed | Skipped |"
-            echo "|-------|---------|---------|----------|"
-            jq -r '"| \(.numTotalTests) | \(.numPassedTests) | \(.numFailedTests) | \(.numPendingTests) |"' test-results.json
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Live API sanity check
@@ -60,7 +67,7 @@ jobs:
           SCREENLY_API_KEY: ${{ secrets.SCREENLY_API_TOKEN }}
         run: |
           echo "## Live API Test Results" >> "$GITHUB_STEP_SUMMARY"
-          npm test
+          npm test -- --reporter verbose >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload coverage report
         uses: actions/upload-artifact@v4
@@ -71,19 +78,11 @@ jobs:
       - name: Run visual tests
         run: |
           mkdir -p __image_snapshots__
-          CHROME_PATH="$(which chrome)" xvfb-run --auto-servernum --server-args="-screen 0 1280x800x24" npm run test:visual:ci -- -u --json --outputFile=visual-test-results.json
+          CHROME_PATH="$(which chrome)" xvfb-run --auto-servernum --server-args="-screen 0 1280x800x24" npm run test:visual:ci -- --update --coverage.reporter=json --reporter verbose >> "$GITHUB_STEP_SUMMARY"
 
-          # Show test results and screenshots
+          # Show screenshots in summary
           {
-            if [ -f "visual-test-results.json" ]; then
-              echo "## Visual Test Results"
-              echo "| Total | Passed | Failed | Skipped |"
-              echo "|-------|---------|---------|----------|"
-              jq -r '"| \(.numTotalTests) | \(.numPassedTests) | \(.numFailedTests) | \(.numPendingTests) |"' visual-test-results.json
-              echo ""
-            fi
-
-            echo "## Screenshots"
+            echo "### Screenshots"
             echo ""
             for img in __image_snapshots__/ci-*.png; do
               if [ -f "$img" ]; then

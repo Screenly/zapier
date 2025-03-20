@@ -1,4 +1,4 @@
-const utils = require('../utils');
+import utils from '../utils.js';
 
 const schedulePlaylistItem = {
   key: 'schedule_playlist_item',
@@ -34,7 +34,7 @@ const schedulePlaylistItem = {
         helpText: 'How long should this asset be shown (in seconds)',
       },
     ],
-    perform: async (z, bundle) => {
+    perform: async (z: any, bundle: any) => {
       await utils.waitForAssetReady(z, bundle.inputData.asset_id, bundle.authData.api_key);
 
       return await utils.createPlaylistItem(z, bundle, {
@@ -55,4 +55,4 @@ const schedulePlaylistItem = {
   },
 };
 
-module.exports = schedulePlaylistItem;
+export default schedulePlaylistItem;

@@ -1,5 +1,6 @@
-const nock = require('nock');
-const utils = require('../utils');
+import nock from 'nock';
+import utils from '../src/utils.js';
+import { describe, beforeEach, it, vi, expect } from 'vitest';
 
 const TEST_API_KEY = 'test-api-key';
 
@@ -11,7 +12,7 @@ describe('Utils', () => {
   describe('getLabel', () => {
     it('successfully fetches a label', async () => {
       const z = {
-        request: jest.fn().mockResolvedValue({
+        request: vi.fn().mockResolvedValue({
           status: 200,
           json: [{ id: 'label-123', name: 'test-label' }],
         }),
@@ -26,7 +27,7 @@ describe('Utils', () => {
 
     it('throws error when no labels found', async () => {
       const z = {
-        request: jest.fn().mockResolvedValue({
+        request: vi.fn().mockResolvedValue({
           status: 200,
           json: [],
         }),
@@ -43,7 +44,7 @@ describe('Utils', () => {
   describe('getPlaylistsByLabel', () => {
     it('successfully fetches playlists by label', async () => {
       const z = {
-        request: jest.fn().mockResolvedValue({
+        request: vi.fn().mockResolvedValue({
           status: 200,
           json: [{ playlist_id: 'playlist-1' }, { playlist_id: 'playlist-2' }],
         }),
@@ -58,7 +59,7 @@ describe('Utils', () => {
 
     it('handles error response', async () => {
       const z = {
-        request: jest.fn().mockResolvedValue({
+        request: vi.fn().mockResolvedValue({
           status: 404,
           json: { error: 'Not found' },
         }),
@@ -75,7 +76,7 @@ describe('Utils', () => {
   describe('deletePlaylist', () => {
     it('successfully deletes a playlist', async () => {
       const z = {
-        request: jest.fn().mockResolvedValue({
+        request: vi.fn().mockResolvedValue({
           status: 200,
           json: {},
         }),
@@ -89,7 +90,7 @@ describe('Utils', () => {
 
     it('handles failed deletion', async () => {
       const z = {
-        request: jest.fn().mockResolvedValue({
+        request: vi.fn().mockResolvedValue({
           status: 404,
           json: { error: 'Not found' },
         }),
@@ -105,7 +106,7 @@ describe('Utils', () => {
   describe('createPlaylist', () => {
     it('successfully creates a playlist', async () => {
       const z = {
-        request: jest.fn().mockResolvedValue({
+        request: vi.fn().mockResolvedValue({
           status: 201,
           json: [
             {
@@ -129,7 +130,7 @@ describe('Utils', () => {
 
     it('throws error when no playlist returned', async () => {
       const z = {
-        request: jest.fn().mockResolvedValue({
+        request: vi.fn().mockResolvedValue({
           status: 201,
           json: [],
         }),
@@ -149,7 +150,7 @@ describe('Utils', () => {
   describe('waitForAssetReady', () => {
     it('waits for asset to be ready', async () => {
       const z = {
-        request: jest
+        request: vi
           .fn()
           .mockResolvedValueOnce({
             status: 200,
@@ -159,7 +160,7 @@ describe('Utils', () => {
             status: 200,
             json: [{ status: 'finished' }],
           }),
-        console: { log: jest.fn() },
+        console: { log: vi.fn() },
       };
 
       const status = await utils.waitForAssetReady(z, 'asset-123', TEST_API_KEY);

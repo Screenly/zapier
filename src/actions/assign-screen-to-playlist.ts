@@ -1,4 +1,4 @@
-const utils = require('../utils');
+import utils from '../utils.js';
 
 const assignScreenToPlaylist = {
   key: 'assign_screen_to_playlist',
@@ -26,7 +26,7 @@ const assignScreenToPlaylist = {
         helpText: 'Select the playlist to assign to the screen',
       },
     ],
-    perform: async (z, bundle) => {
+    perform: async (z: any, bundle: any) => {
       return await utils.assignPlaylistToScreen(z, bundle, {
         screenId: bundle.inputData.screen_id,
         playlistId: bundle.inputData.playlist_id,
@@ -40,4 +40,4 @@ const assignScreenToPlaylist = {
   },
 };
 
-module.exports = assignScreenToPlaylist;
+export default assignScreenToPlaylist;

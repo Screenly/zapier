@@ -1,20 +1,16 @@
-'use strict';
-
-require('./setup.visual');
-const puppeteer = require('puppeteer');
+import puppeteer, { type Browser, type Page } from 'puppeteer';
+import { describe, beforeEach, beforeAll, afterAll, afterEach, test, expect } from 'vitest';
 
 // Skip all visual tests if not in CI environment
 const describeVisual = process.env.CI ? describe : describe.skip;
 
 describeVisual('Zapier Visual Tests', () => {
-  /** @type {import('puppeteer').Browser} */
-  let browser;
-  /** @type {import('puppeteer').Page} */
-  let page;
+  let browser: Browser;
+  let page: Page;
 
   beforeAll(async () => {
     browser = await puppeteer.launch({
-      headless: 'new',
+      headless: true,
       args: [
         '--no-sandbox',
         '--disable-setuid-sandbox',
@@ -24,7 +20,7 @@ describeVisual('Zapier Visual Tests', () => {
         '--disable-web-security',
         '--disable-features=IsolateOrigins,site-per-process',
       ],
-      ignoreHTTPSErrors: true,
+      // ignoreHTTPSErrors: true,
       defaultViewport: {
         width: 1280,
         height: 800,

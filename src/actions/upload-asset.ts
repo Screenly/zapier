@@ -1,4 +1,4 @@
-const utils = require('../utils');
+import utils from '../utils.js';
 
 const uploadAsset = {
   key: 'upload_asset',
@@ -24,7 +24,7 @@ const uploadAsset = {
         helpText: 'Title of the asset',
       },
     ],
-    perform: async (z, bundle) => {
+    perform: async (z: any, bundle: any) => {
       return await utils.createAsset(z, bundle, {
         title: bundle.inputData.title,
         sourceUrl: bundle.inputData.file,
@@ -40,4 +40,4 @@ const uploadAsset = {
   },
 };
 
-module.exports = uploadAsset;
+export default uploadAsset;

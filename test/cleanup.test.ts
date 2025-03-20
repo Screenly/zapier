@@ -1,6 +1,7 @@
-const zapier = require('zapier-platform-core');
-const App = require('../index');
-const nock = require('nock');
+import zapier from 'zapier-platform-core';
+import App from '../src/index.js';
+import nock from 'nock';
+import { describe, beforeEach, test, expect } from 'vitest';
 
 const TEST_API_KEY = 'valid-api-key';
 const appTester = zapier.createAppTester(App);
