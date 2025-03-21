@@ -1,8 +1,8 @@
 // Utility functions for Screenly Zapier integration
 
-const { READY_STATES } = require('./constants');
+import { READY_STATES } from './constants.js';
 
-const handleError = (response, customMessage) => {
+const handleError = (response: any, customMessage: string) => {
   if (response.status >= 400) {
     throw new Error(customMessage);
   }
@@ -10,7 +10,7 @@ const handleError = (response, customMessage) => {
   return response.json;
 };
 
-const makeRequest = async (z, url, options = {}) => {
+const makeRequest = async (z: any, url: string, options: any = {}) => {
   const response = await z.request({
     url,
     ...options,
@@ -23,7 +23,7 @@ const makeRequest = async (z, url, options = {}) => {
   return handleError(response, 'Screenly API Error');
 };
 
-const waitForAssetReady = async (z, assetId, authToken) => {
+const waitForAssetReady = async (z: any, assetId: any, authToken: string) => {
   let assetStatus;
   do {
     const statusResponse = await z.request({
@@ -43,7 +43,11 @@ const waitForAssetReady = async (z, assetId, authToken) => {
   return assetStatus;
 };
 
-const createAsset = async (z, bundle, { title, sourceUrl, disableVerification = false }) => {
+const createAsset = async (
+  z: any,
+  bundle: any,
+  { title, sourceUrl, disableVerification = false }: any
+) => {
   const response = await z.request({
     url: 'https://api.screenlyapp.com/api/v4/assets/',
     method: 'POST',
@@ -68,8 +72,8 @@ const createAsset = async (z, bundle, { title, sourceUrl, disableVerification = 
   return assets[0];
 };
 
-const createPlaylistItem = async (z, bundle, { assetId, playlistId, duration }) => {
-  const payload = {
+const createPlaylistItem = async (z: any, bundle: any, { assetId, playlistId, duration }: any) => {
+  const payload: any = {
     asset_id: assetId,
     playlist_id: playlistId,
   };
@@ -98,7 +102,11 @@ const createPlaylistItem = async (z, bundle, { assetId, playlistId, duration }) 
   return items[0];
 };
 
-const assignPlaylistToScreen = async (z, bundle, { screenId, playlistId }) => {
+const assignPlaylistToScreen = async (
+  z: any,
+  bundle: any,
+  { screenId, playlistId }: { screenId: string; playlistId: string }
+) => {
   const response = await z.request({
     url: `https://api.screenlyapp.com/api/v4/labels/playlists`,
     method: 'POST',
@@ -127,7 +135,11 @@ const assignPlaylistToScreen = async (z, bundle, { screenId, playlistId }) => {
   };
 };
 
-const createPlaylist = async (z, bundle, { title, predicate }) => {
+const createPlaylist = async (
+  z: any,
+  bundle: any,
+  { title, predicate }: { title: string; predicate: any }
+) => {
   const response = await z.request({
     url: 'https://api.screenlyapp.com/api/v4/playlists',
     method: 'POST',
@@ -151,8 +163,8 @@ const createPlaylist = async (z, bundle, { title, predicate }) => {
   return playlists[0];
 };
 
-const getLabel = async (z, bundle, { name }) => {
-  const queryParams = { name: `eq.${name}` };
+const getLabel = async (z: any, bundle: any, { name }: { name: string }) => {
+  const queryParams: any = { name: `eq.${name}` };
   const queryString = Object.keys(queryParams)
     .map((key) => `${key}=${queryParams[key]}`)
     .join('&');
@@ -174,7 +186,7 @@ const getLabel = async (z, bundle, { name }) => {
   return labels[0];
 };
 
-const getPlaylistsByLabel = async (z, bundle, { labelId }) => {
+const getPlaylistsByLabel = async (z: any, bundle: any, { labelId }: { labelId: string }) => {
   const response = await z.request({
     url: `https://api.screenlyapp.com/api/v4/labels/playlists?label_id=eq.${labelId}`,
     method: 'GET',
@@ -188,7 +200,7 @@ const getPlaylistsByLabel = async (z, bundle, { labelId }) => {
   return handleError(response, 'Failed to fetch playlist to labels');
 };
 
-const deletePlaylist = async (z, bundle, { playlistId }) => {
+const deletePlaylist = async (z: any, bundle: any, { playlistId }: { playlistId: string }) => {
   const response = await z.request({
     url: `https://api.screenlyapp.com/api/v4/playlists/?id=eq.${playlistId}/`,
     method: 'DELETE',
@@ -203,7 +215,7 @@ const deletePlaylist = async (z, bundle, { playlistId }) => {
   return response.status === 200;
 };
 
-module.exports = {
+export default {
   handleError,
   makeRequest,
   waitForAssetReady,

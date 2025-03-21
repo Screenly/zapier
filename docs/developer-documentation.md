@@ -55,7 +55,7 @@ The project uses several tools to ensure code quality:
 
 - **ESLint** - For code linting
 - **Prettier** - For code formatting
-- **Jest** - For testing
+- **Vitest** - For testing
 - **Husky** - For git hooks
 - **lint-staged** - For running checks on staged files
 - **markdownlint** - For markdown formatting
@@ -141,6 +141,14 @@ These tests are skipped locally to avoid environment-specific issues.
    - Paste your deploy key as the value
 
 ## Deployment
+
+Compile the TypeScript code so that JavaScript code will be generated:
+
+```
+npm run build
+```
+
+The command will create a new folder called `dist/`, which is referenced by `index.js`.
 
 The integration is automatically deployed to Zapier when a new version tag is pushed to GitHub.
 

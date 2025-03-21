@@ -1,6 +1,7 @@
-const zapier = require('zapier-platform-core');
-const App = require('../index');
-const nock = require('nock');
+import zapier from 'zapier-platform-core';
+import App from '../src/index.js';
+import nock from 'nock';
+import { describe, beforeEach, expect, test } from 'vitest';
 
 const TEST_API_KEY = 'valid-api-key';
 const appTester = zapier.createAppTester(App);
@@ -22,7 +23,7 @@ describe('Authentication', () => {
       .matchHeader('Authorization', `Token ${TEST_API_KEY}`)
       .reply(200, []);
 
-    const response = await appTester(App.authentication.test, bundle);
+    const response = await appTester(App.authentication.test as any, bundle);
     expect(Array.isArray(response)).toBe(true);
   });
 
@@ -38,6 +39,6 @@ describe('Authentication', () => {
       .matchHeader('Authorization', 'Token invalid-api-key')
       .reply(401, { detail: 'Invalid token' });
 
-    await expect(appTester(App.authentication.test, bundle)).rejects.toThrow();
+    await expect(appTester(App.authentication.test as any, bundle)).rejects.toThrow();
   });
 });

@@ -1,6 +1,5 @@
-'use strict';
-
-const { configureToMatchImageSnapshot } = require('jest-image-snapshot');
+import { configureToMatchImageSnapshot } from 'jest-image-snapshot';
+import { expect, vi } from 'vitest';
 
 const toMatchImageSnapshot = configureToMatchImageSnapshot({
   // Increase threshold for CI environments where rendering might differ slightly
@@ -21,5 +20,7 @@ const toMatchImageSnapshot = configureToMatchImageSnapshot({
 
 expect.extend({ toMatchImageSnapshot });
 
-// Increase Jest timeout for visual tests
-jest.setTimeout(30000);
+// Increase vitest timeout for visual tests
+vi.setConfig({
+  testTimeout: 30000,
+});

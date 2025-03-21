@@ -1,4 +1,4 @@
-const utils = require('../utils');
+import utils from '../utils.js';
 
 const getAssets = {
   key: 'get_assets',
@@ -9,7 +9,7 @@ const getAssets = {
     hidden: true,
   },
   operation: {
-    perform: async (z, bundle) => {
+    perform: async (z: any, bundle: any) => {
       const response = await z.request({
         url: 'https://api.screenlyapp.com/api/v4/assets/',
         headers: {
@@ -29,4 +29,4 @@ const getAssets = {
   },
 };
 
-module.exports = { getAssets };
+export { getAssets };
