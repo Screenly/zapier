@@ -58,6 +58,10 @@ const completeWorkflow = {
       },
     ],
     perform: async (z: ZObject, bundle: Bundle): Promise<object> => {
+      if (!bundle.authData.api_key) {
+        throw new Error('API key is required');
+      }
+
       if (!bundle.inputData.playlist_id && !bundle.inputData.new_playlist_name) {
         throw new Error('Either select an existing playlist or provide a name for a new one');
       }

@@ -36,6 +36,10 @@ const schedulePlaylistItem = {
       },
     ],
     perform: async (z: ZObject, bundle: Bundle): Promise<object> => {
+      if (!bundle.authData.api_key) {
+        throw new Error('API key is required');
+      }
+
       await utils.waitForAssetReady(z, bundle.inputData.asset_id, bundle.authData.api_key);
 
       return await utils.createPlaylistItem(z, bundle, {

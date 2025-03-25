@@ -11,18 +11,10 @@ const handleError = (response: any, customMessage: string) => {
   return response.json;
 };
 
-const makeRequest = async (z: ZObject, url: string, options: object = {}): Promise<object> => {
-  const response = await z.request({
-    url,
-    ...options,
-    headers: {
-      ...options.headers,
-      Authorization: `Token ${z.authData.api_key}`,
-    },
-  });
-
-  return handleError(response, 'Screenly API Error');
-};
+interface RequestOptions {
+  headers?: Record<string, string>;
+  [key: string]: any; // Allow other properties
+}
 
 const waitForAssetReady = async (z: ZObject, assetId: string, authToken: string) => {
   let assetStatus;
@@ -234,7 +226,6 @@ const deletePlaylist = async (
 
 export default {
   handleError,
-  makeRequest,
   waitForAssetReady,
   createAsset,
   createPlaylistItem,
