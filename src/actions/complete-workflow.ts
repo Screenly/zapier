@@ -1,3 +1,4 @@
+import { ZObject, Bundle } from 'zapier-platform-core';
 import utils from '../utils.js';
 import { ZAPIER_TAG } from '../constants.js';
 
@@ -56,7 +57,7 @@ const completeWorkflow = {
         helpText: 'Select the screen to assign',
       },
     ],
-    perform: async (z: any, bundle: any) => {
+    perform: async (z: ZObject, bundle: Bundle): Promise<object> => {
       if (!bundle.inputData.playlist_id && !bundle.inputData.new_playlist_name) {
         throw new Error('Either select an existing playlist or provide a name for a new one');
       }
@@ -86,7 +87,7 @@ const completeWorkflow = {
           },
         });
 
-        let labelId: any;
+        let labelId: string;
         const existingLabels = labelQueryResponse.json;
 
         if (existingLabels.length > 0) {

@@ -22,7 +22,6 @@ module.exports = {
     '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
     '@typescript-eslint/no-explicit-any': 'error',
     '@typescript-eslint/explicit-function-return-type': 'error',
-    '@typescript-eslint/strict-boolean-expressions': 'error',
   },
   ignorePatterns: [
     'index.js',

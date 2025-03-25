@@ -1,3 +1,4 @@
+import { ZObject, Bundle } from 'zapier-platform-core';
 import utils from '../utils.js';
 
 const schedulePlaylistItem = {
@@ -34,7 +35,7 @@ const schedulePlaylistItem = {
         helpText: 'How long should this asset be shown (in seconds)',
       },
     ],
-    perform: async (z: any, bundle: any) => {
+    perform: async (z: ZObject, bundle: Bundle): Promise<object> => {
       await utils.waitForAssetReady(z, bundle.inputData.asset_id, bundle.authData.api_key);
 
       return await utils.createPlaylistItem(z, bundle, {

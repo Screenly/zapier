@@ -1,3 +1,4 @@
+import { ZObject, Bundle } from 'zapier-platform-core';
 import utils from '../utils.js';
 
 const assignScreenToPlaylist = {
@@ -26,7 +27,7 @@ const assignScreenToPlaylist = {
         helpText: 'Select the playlist to assign to the screen',
       },
     ],
-    perform: async (z: any, bundle: any) => {
+    perform: async (z: ZObject, bundle: Bundle): Promise<object> => {
       return await utils.assignPlaylistToScreen(z, bundle, {
         screenId: bundle.inputData.screen_id,
         playlistId: bundle.inputData.playlist_id,
