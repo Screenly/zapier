@@ -1,3 +1,4 @@
+import { ZObject, Bundle } from 'zapier-platform-core';
 import utils from '../utils.js';
 
 const getScreens = {
@@ -9,7 +10,7 @@ const getScreens = {
     hidden: true,
   },
   operation: {
-    perform: async (z: any, bundle: any) => {
+    perform: async (z: ZObject, bundle: Bundle): Promise<object> => {
       const response = await z.request({
         url: 'https://api.screenlyapp.com/api/v4/screens/',
         headers: {
