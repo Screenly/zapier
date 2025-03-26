@@ -14,7 +14,7 @@ describe('Utils', () => {
       const z = {
         request: vi.fn().mockResolvedValue({
           status: 200,
-          json: [{ id: 'label-123', name: 'test-label' }],
+          data: [{ id: 'label-123', name: 'test-label' }],
         }),
         authData: { api_key: TEST_API_KEY },
       };
@@ -29,7 +29,7 @@ describe('Utils', () => {
       const z = {
         request: vi.fn().mockResolvedValue({
           status: 200,
-          json: [],
+          data: [],
         }),
         authData: { api_key: TEST_API_KEY },
       };
@@ -46,7 +46,7 @@ describe('Utils', () => {
       const z = {
         request: vi.fn().mockResolvedValue({
           status: 200,
-          json: [{ playlist_id: 'playlist-1' }, { playlist_id: 'playlist-2' }],
+          data: [{ playlist_id: 'playlist-1' }, { playlist_id: 'playlist-2' }],
         }),
         authData: { api_key: TEST_API_KEY },
       };
@@ -61,7 +61,7 @@ describe('Utils', () => {
       const z = {
         request: vi.fn().mockResolvedValue({
           status: 404,
-          json: { error: 'Not found' },
+          data: { error: 'Not found' },
         }),
         authData: { api_key: TEST_API_KEY },
       };
@@ -78,7 +78,7 @@ describe('Utils', () => {
       const z = {
         request: vi.fn().mockResolvedValue({
           status: 200,
-          json: {},
+          data: {},
         }),
         authData: { api_key: TEST_API_KEY },
       };
@@ -92,7 +92,7 @@ describe('Utils', () => {
       const z = {
         request: vi.fn().mockResolvedValue({
           status: 404,
-          json: { error: 'Not found' },
+          data: { error: 'Not found' },
         }),
         authData: { api_key: TEST_API_KEY },
       };
@@ -108,7 +108,7 @@ describe('Utils', () => {
       const z = {
         request: vi.fn().mockResolvedValue({
           status: 201,
-          json: [
+          data: [
             {
               id: 'playlist-123',
               title: 'Test Playlist',
@@ -132,7 +132,7 @@ describe('Utils', () => {
       const z = {
         request: vi.fn().mockResolvedValue({
           status: 201,
-          json: [],
+          data: [],
         }),
         authData: { api_key: TEST_API_KEY },
       };
@@ -154,11 +154,11 @@ describe('Utils', () => {
           .fn()
           .mockResolvedValueOnce({
             status: 200,
-            json: [{ status: '' }],
+            data: [{ status: '' }],
           })
           .mockResolvedValueOnce({
             status: 200,
-            json: [{ status: 'finished' }],
+            data: [{ status: 'finished' }],
           }),
         console: { log: vi.fn() },
       };

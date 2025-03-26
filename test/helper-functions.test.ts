@@ -5,7 +5,7 @@ describe('Helper Functions', () => {
   test('handleError returns json on success', async () => {
     const response = {
       status: 200,
-      json: { data: 'test' },
+      data: { data: 'test' },
     };
 
     const result = utils.handleError(response, 'Error message');

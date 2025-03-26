@@ -2,7 +2,7 @@
 
 import { ZObject, Bundle, HttpResponse } from 'zapier-platform-core';
 import { READY_STATES } from './constants.js';
-import { Asset } from './types/screenly.js';
+import { Asset, PlaylistItem, Playlist, Label, PlaylistLabel } from './types/screenly.js';
 
 const handleError = <T>(response: HttpResponse<T>, customMessage: string): T => {
   if (response.status >= 400) {
@@ -73,8 +73,8 @@ const createPlaylistItem = async (
   z: ZObject,
   bundle: Bundle,
   { assetId, playlistId, duration }: { assetId: string; playlistId: string; duration: number }
-) => {
-  const payload: any = {
+): Promise<PlaylistItem> => {
+  const payload: PlaylistItem = {
     asset_id: assetId,
     playlist_id: playlistId,
   };
@@ -107,7 +107,7 @@ const assignPlaylistToScreen = async (
   z: ZObject,
   bundle: Bundle,
   { screenId, playlistId }: { screenId: string; playlistId: string }
-) => {
+): Promise<{ screen_id: string; playlist_id: string; message: string }> => {
   const response = await z.request({
     url: `https://api.screenlyapp.com/api/v4/labels/playlists`,
     method: 'POST',
@@ -140,7 +140,7 @@ const createPlaylist = async (
   z: ZObject,
   bundle: Bundle,
   { title, predicate }: { title: string; predicate: string }
-) => {
+): Promise<Playlist> => {
   const response = await z.request({
     url: 'https://api.screenlyapp.com/api/v4/playlists',
     method: 'POST',
@@ -164,11 +164,9 @@ const createPlaylist = async (
   return playlists[0];
 };
 
-const getLabel = async (z: ZObject, bundle: Bundle, { name }: { name: string }) => {
-  const queryParams: any = { name: `eq.${name}` };
-  const queryString = Object.keys(queryParams)
-    .map((key) => `${key}=${queryParams[key]}`)
-    .join('&');
+const getLabel = async (z: ZObject, bundle: Bundle, { name }: { name: string }): Promise<Label> => {
+  const queryParams = { name: `eq.${name}` };
+  const queryString = new URLSearchParams(queryParams).toString();
 
   const response = await z.request({
     url: `https://api.screenlyapp.com/api/v4/labels/?${queryString}`,
@@ -191,7 +189,7 @@ const getPlaylistsByLabel = async (
   z: ZObject,
   bundle: Bundle,
   { labelId }: { labelId: string }
-) => {
+): Promise<PlaylistLabel[]> => {
   const response = await z.request({
     url: `https://api.screenlyapp.com/api/v4/labels/playlists?label_id=eq.${labelId}`,
     method: 'GET',
@@ -209,7 +207,7 @@ const deletePlaylist = async (
   z: ZObject,
   bundle: Bundle,
   { playlistId }: { playlistId: string }
-) => {
+): Promise<boolean> => {
   const response = await z.request({
     url: `https://api.screenlyapp.com/api/v4/playlists/?id=eq.${playlistId}/`,
     method: 'DELETE',
