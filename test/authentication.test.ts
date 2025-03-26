@@ -39,6 +39,8 @@ describe('Authentication', () => {
       .matchHeader('Authorization', 'Token invalid-api-key')
       .reply(401, { detail: 'Invalid token' });
 
-    await expect(appTester(App.authentication.test as any, bundle)).rejects.toThrow();
+    await expect(
+      appTester(App.authentication.test as any, bundle)
+    ).rejects.toThrow();
   });
 });

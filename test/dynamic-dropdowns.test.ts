@@ -26,7 +26,10 @@ describe('Dynamic Dropdowns', () => {
         { id: 'playlist-2', name: 'Playlist 2' },
       ]);
 
-    const response = await appTester(App.triggers.get_playlists.operation.perform, bundle);
+    const response = await appTester(
+      App.triggers.get_playlists.operation.perform,
+      bundle
+    );
     expect(response).toHaveLength(2);
     expect(response[0].id).toBe('playlist-1');
     expect(response[1].name).toBe('Playlist 2');
@@ -47,7 +50,10 @@ describe('Dynamic Dropdowns', () => {
         { id: 'asset-2', title: 'Asset 2' },
       ]);
 
-    const response = await appTester(App.triggers.get_assets.operation.perform, bundle);
+    const response = await appTester(
+      App.triggers.get_assets.operation.perform,
+      bundle
+    );
     expect(response).toHaveLength(2);
     expect(response[0].id).toBe('asset-1');
     expect(response[1].title).toBe('Asset 2');
@@ -68,7 +74,10 @@ describe('Dynamic Dropdowns', () => {
         { id: 'screen-2', name: 'Screen 2' },
       ]);
 
-    const response = await appTester(App.triggers.get_screens.operation.perform, bundle);
+    const response = await appTester(
+      App.triggers.get_screens.operation.perform,
+      bundle
+    );
     expect(response).toHaveLength(2);
     expect(response[0].id).toBe('screen-1');
     expect(response[1].name).toBe('Screen 2');

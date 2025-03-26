@@ -1,3 +1,4 @@
+import { ZObject, Bundle } from 'zapier-platform-core';
 import utils from '../utils.js';
 
 const schedulePlaylistItem = {
@@ -34,8 +35,16 @@ const schedulePlaylistItem = {
         helpText: 'How long should this asset be shown (in seconds)',
       },
     ],
-    perform: async (z: any, bundle: any) => {
-      await utils.waitForAssetReady(z, bundle.inputData.asset_id, bundle.authData.api_key);
+    perform: async (z: ZObject, bundle: Bundle): Promise<object> => {
+      if (!bundle.authData.api_key) {
+        throw new Error('API key is required');
+      }
+
+      await utils.waitForAssetReady(
+        z,
+        bundle.inputData.asset_id,
+        bundle.authData.api_key
+      );
 
       return await utils.createPlaylistItem(z, bundle, {
         assetId: bundle.inputData.asset_id,

@@ -1,3 +1,4 @@
+import { ZObject, Bundle } from 'zapier-platform-core';
 import utils from '../utils.js';
 import { ZAPIER_TAG } from '../constants.js';
 
@@ -56,9 +57,18 @@ const completeWorkflow = {
         helpText: 'Select the screen to assign',
       },
     ],
-    perform: async (z: any, bundle: any) => {
-      if (!bundle.inputData.playlist_id && !bundle.inputData.new_playlist_name) {
-        throw new Error('Either select an existing playlist or provide a name for a new one');
+    perform: async (z: ZObject, bundle: Bundle): Promise<object> => {
+      if (!bundle.authData.api_key) {
+        throw new Error('API key is required');
+      }
+
+      if (
+        !bundle.inputData.playlist_id &&
+        !bundle.inputData.new_playlist_name
+      ) {
+        throw new Error(
+          'Either select an existing playlist or provide a name for a new one'
+        );
       }
 
       // Upload asset
@@ -86,8 +96,8 @@ const completeWorkflow = {
           },
         });
 
-        let labelId: any;
-        const existingLabels = labelQueryResponse.json;
+        let labelId: string;
+        const existingLabels = labelQueryResponse.data;
 
         if (existingLabels.length > 0) {
           labelId = existingLabels[0].id;
@@ -104,7 +114,10 @@ const completeWorkflow = {
               name: ZAPIER_TAG,
             },
           });
-          labelId = utils.handleError(labelResponse, 'Failed to create label').id;
+          labelId = utils.handleError(
+            labelResponse,
+            'Failed to create label'
+          ).id;
         }
 
         // Tag the new playlist

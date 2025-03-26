@@ -1,5 +1,13 @@
 import puppeteer, { type Browser, type Page } from 'puppeteer';
-import { describe, beforeEach, beforeAll, afterAll, afterEach, test, expect } from 'vitest';
+import {
+  describe,
+  beforeEach,
+  beforeAll,
+  afterAll,
+  afterEach,
+  test,
+  expect,
+} from 'vitest';
 
 // Skip all visual tests if not in CI environment
 const describeVisual = process.env.CI ? describe : describe.skip;

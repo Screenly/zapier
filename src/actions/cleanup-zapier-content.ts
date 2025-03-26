@@ -1,3 +1,4 @@
+import { ZObject, Bundle } from 'zapier-platform-core';
 import utils from '../utils.js';
 import { ZAPIER_TAG } from '../constants.js';
 
@@ -15,10 +16,11 @@ const cleanupZapierContent = {
         label: 'Confirm Cleanup',
         type: 'boolean',
         required: true,
-        helpText: 'Are you sure you want to remove all content created by Zapier?',
+        helpText:
+          'Are you sure you want to remove all content created by Zapier?',
       },
     ],
-    perform: async (z: any, bundle: any) => {
+    perform: async (z: ZObject, bundle: Bundle): Promise<object> => {
       if (!bundle.inputData.confirm) {
         throw new Error('Please confirm the cleanup operation');
       }
@@ -27,11 +29,17 @@ const cleanupZapierContent = {
       const label = await utils.getLabel(z, bundle, { name: ZAPIER_TAG });
 
       // Get all playlists associated with the Zapier tag
-      const playlistToLabelMappings = await utils.getPlaylistsByLabel(z, bundle, {
-        labelId: label.id,
-      });
+      const playlistToLabelMappings = await utils.getPlaylistsByLabel(
+        z,
+        bundle,
+        {
+          labelId: label.id,
+        }
+      );
 
-      const playListIds = playlistToLabelMappings.map((mapping: any) => mapping.playlist_id);
+      const playListIds = playlistToLabelMappings.map(
+        (mapping: { playlist_id: string }) => mapping.playlist_id
+      );
       let successfulDeletions = 0;
 
       // Delete each playlist

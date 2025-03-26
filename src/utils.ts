@@ -1,29 +1,31 @@
 // Utility functions for Screenly Zapier integration
 
+import { ZObject, Bundle, HttpResponse } from 'zapier-platform-core';
 import { READY_STATES } from './constants.js';
+import {
+  Asset,
+  PlaylistItem,
+  Playlist,
+  Label,
+  PlaylistLabel,
+} from './types/screenly.js';
 
-const handleError = (response: any, customMessage: string) => {
+const handleError = <T>(
+  response: HttpResponse<T>,
+  customMessage: string
+): T => {
   if (response.status >= 400) {
     throw new Error(customMessage);
   }
 
-  return response.json;
+  return response.data;
 };
 
-const makeRequest = async (z: any, url: string, options: any = {}) => {
-  const response = await z.request({
-    url,
-    ...options,
-    headers: {
-      ...options.headers,
-      Authorization: `Token ${z.authData.api_key}`,
-    },
-  });
-
-  return handleError(response, 'Screenly API Error');
-};
-
-const waitForAssetReady = async (z: any, assetId: any, authToken: string) => {
+const waitForAssetReady = async (
+  z: ZObject,
+  assetId: string,
+  authToken: string
+): Promise<string> => {
   let assetStatus;
   do {
     const statusResponse = await z.request({
@@ -44,10 +46,14 @@ const waitForAssetReady = async (z: any, assetId: any, authToken: string) => {
 };
 
 const createAsset = async (
-  z: any,
-  bundle: any,
-  { title, sourceUrl, disableVerification = false }: any
-) => {
+  z: ZObject,
+  bundle: Bundle,
+  {
+    title,
+    sourceUrl,
+    disableVerification = false,
+  }: { title: string; sourceUrl: string; disableVerification?: boolean }
+): Promise<Asset> => {
   const response = await z.request({
     url: 'https://api.screenlyapp.com/api/v4/assets/',
     method: 'POST',
@@ -72,8 +78,16 @@ const createAsset = async (
   return assets[0];
 };
 
-const createPlaylistItem = async (z: any, bundle: any, { assetId, playlistId, duration }: any) => {
-  const payload: any = {
+const createPlaylistItem = async (
+  z: ZObject,
+  bundle: Bundle,
+  {
+    assetId,
+    playlistId,
+    duration,
+  }: { assetId: string; playlistId: string; duration: number }
+): Promise<PlaylistItem> => {
+  const payload: PlaylistItem = {
     asset_id: assetId,
     playlist_id: playlistId,
   };
@@ -103,10 +117,10 @@ const createPlaylistItem = async (z: any, bundle: any, { assetId, playlistId, du
 };
 
 const assignPlaylistToScreen = async (
-  z: any,
-  bundle: any,
+  z: ZObject,
+  bundle: Bundle,
   { screenId, playlistId }: { screenId: string; playlistId: string }
-) => {
+): Promise<{ screen_id: string; playlist_id: string; message: string }> => {
   const response = await z.request({
     url: `https://api.screenlyapp.com/api/v4/labels/playlists`,
     method: 'POST',
@@ -136,10 +150,10 @@ const assignPlaylistToScreen = async (
 };
 
 const createPlaylist = async (
-  z: any,
-  bundle: any,
-  { title, predicate }: { title: string; predicate: any }
-) => {
+  z: ZObject,
+  bundle: Bundle,
+  { title, predicate }: { title: string; predicate: string }
+): Promise<Playlist> => {
   const response = await z.request({
     url: 'https://api.screenlyapp.com/api/v4/playlists',
     method: 'POST',
@@ -163,11 +177,13 @@ const createPlaylist = async (
   return playlists[0];
 };
 
-const getLabel = async (z: any, bundle: any, { name }: { name: string }) => {
-  const queryParams: any = { name: `eq.${name}` };
-  const queryString = Object.keys(queryParams)
-    .map((key) => `${key}=${queryParams[key]}`)
-    .join('&');
+const getLabel = async (
+  z: ZObject,
+  bundle: Bundle,
+  { name }: { name: string }
+): Promise<Label> => {
+  const queryParams = { name: `eq.${name}` };
+  const queryString = new URLSearchParams(queryParams).toString();
 
   const response = await z.request({
     url: `https://api.screenlyapp.com/api/v4/labels/?${queryString}`,
@@ -186,7 +202,11 @@ const getLabel = async (z: any, bundle: any, { name }: { name: string }) => {
   return labels[0];
 };
 
-const getPlaylistsByLabel = async (z: any, bundle: any, { labelId }: { labelId: string }) => {
+const getPlaylistsByLabel = async (
+  z: ZObject,
+  bundle: Bundle,
+  { labelId }: { labelId: string }
+): Promise<PlaylistLabel[]> => {
   const response = await z.request({
     url: `https://api.screenlyapp.com/api/v4/labels/playlists?label_id=eq.${labelId}`,
     method: 'GET',
@@ -200,7 +220,11 @@ const getPlaylistsByLabel = async (z: any, bundle: any, { labelId }: { labelId: 
   return handleError(response, 'Failed to fetch playlist to labels');
 };
 
-const deletePlaylist = async (z: any, bundle: any, { playlistId }: { playlistId: string }) => {
+const deletePlaylist = async (
+  z: ZObject,
+  bundle: Bundle,
+  { playlistId }: { playlistId: string }
+): Promise<boolean> => {
   const response = await z.request({
     url: `https://api.screenlyapp.com/api/v4/playlists/?id=eq.${playlistId}/`,
     method: 'DELETE',
@@ -217,7 +241,6 @@ const deletePlaylist = async (z: any, bundle: any, { playlistId }: { playlistId:
 
 export default {
   handleError,
-  makeRequest,
   waitForAssetReady,
   createAsset,
   createPlaylistItem,

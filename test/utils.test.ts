@@ -14,7 +14,7 @@ describe('Utils', () => {
       const z = {
         request: vi.fn().mockResolvedValue({
           status: 200,
-          json: [{ id: 'label-123', name: 'test-label' }],
+          data: [{ id: 'label-123', name: 'test-label' }],
         }),
         authData: { api_key: TEST_API_KEY },
       };
@@ -29,15 +29,15 @@ describe('Utils', () => {
       const z = {
         request: vi.fn().mockResolvedValue({
           status: 200,
-          json: [],
+          data: [],
         }),
         authData: { api_key: TEST_API_KEY },
       };
       const bundle = { authData: { api_key: TEST_API_KEY } };
 
-      await expect(utils.getLabel(z, bundle, { name: 'test-label' })).rejects.toThrow(
-        'No labels returned from the Screenly API'
-      );
+      await expect(
+        utils.getLabel(z, bundle, { name: 'test-label' })
+      ).rejects.toThrow('No labels returned from the Screenly API');
     });
   });
 
@@ -46,13 +46,15 @@ describe('Utils', () => {
       const z = {
         request: vi.fn().mockResolvedValue({
           status: 200,
-          json: [{ playlist_id: 'playlist-1' }, { playlist_id: 'playlist-2' }],
+          data: [{ playlist_id: 'playlist-1' }, { playlist_id: 'playlist-2' }],
         }),
         authData: { api_key: TEST_API_KEY },
       };
       const bundle = { authData: { api_key: TEST_API_KEY } };
 
-      const playlists = await utils.getPlaylistsByLabel(z, bundle, { labelId: 'label-123' });
+      const playlists = await utils.getPlaylistsByLabel(z, bundle, {
+        labelId: 'label-123',
+      });
       expect(playlists).toHaveLength(2);
       expect(playlists[0].playlist_id).toBe('playlist-1');
     });
@@ -61,15 +63,15 @@ describe('Utils', () => {
       const z = {
         request: vi.fn().mockResolvedValue({
           status: 404,
-          json: { error: 'Not found' },
+          data: { error: 'Not found' },
         }),
         authData: { api_key: TEST_API_KEY },
       };
       const bundle = { authData: { api_key: TEST_API_KEY } };
 
-      await expect(utils.getPlaylistsByLabel(z, bundle, { labelId: 'label-123' })).rejects.toThrow(
-        'Failed to fetch playlist to labels'
-      );
+      await expect(
+        utils.getPlaylistsByLabel(z, bundle, { labelId: 'label-123' })
+      ).rejects.toThrow('Failed to fetch playlist to labels');
     });
   });
 
@@ -78,13 +80,15 @@ describe('Utils', () => {
       const z = {
         request: vi.fn().mockResolvedValue({
           status: 200,
-          json: {},
+          data: {},
         }),
         authData: { api_key: TEST_API_KEY },
       };
       const bundle = { authData: { api_key: TEST_API_KEY } };
 
-      const result = await utils.deletePlaylist(z, bundle, { playlistId: 'playlist-123' });
+      const result = await utils.deletePlaylist(z, bundle, {
+        playlistId: 'playlist-123',
+      });
       expect(result).toBe(true);
     });
 
@@ -92,13 +96,15 @@ describe('Utils', () => {
       const z = {
         request: vi.fn().mockResolvedValue({
           status: 404,
-          json: { error: 'Not found' },
+          data: { error: 'Not found' },
         }),
         authData: { api_key: TEST_API_KEY },
       };
       const bundle = { authData: { api_key: TEST_API_KEY } };
 
-      const result = await utils.deletePlaylist(z, bundle, { playlistId: 'playlist-123' });
+      const result = await utils.deletePlaylist(z, bundle, {
+        playlistId: 'playlist-123',
+      });
       expect(result).toBe(false);
     });
   });
@@ -108,7 +114,7 @@ describe('Utils', () => {
       const z = {
         request: vi.fn().mockResolvedValue({
           status: 201,
-          json: [
+          data: [
             {
               id: 'playlist-123',
               title: 'Test Playlist',
@@ -132,7 +138,7 @@ describe('Utils', () => {
       const z = {
         request: vi.fn().mockResolvedValue({
           status: 201,
-          json: [],
+          data: [],
         }),
         authData: { api_key: TEST_API_KEY },
       };
@@ -154,18 +160,24 @@ describe('Utils', () => {
           .fn()
           .mockResolvedValueOnce({
             status: 200,
-            json: [{ status: '' }],
+            data: [{ status: '' }],
           })
           .mockResolvedValueOnce({
             status: 200,
-            json: [{ status: 'finished' }],
+            data: [{ status: 'finished' }],
           }),
         console: { log: vi.fn() },
       };
 
-      const status = await utils.waitForAssetReady(z, 'asset-123', TEST_API_KEY);
+      const status = await utils.waitForAssetReady(
+        z,
+        'asset-123',
+        TEST_API_KEY
+      );
       expect(status).toBe('finished');
-      expect(z.console.log).toHaveBeenCalledWith('Asset asset-123 status: finished');
+      expect(z.console.log).toHaveBeenCalledWith(
+        'Asset asset-123 status: finished'
+      );
     });
   });
 });

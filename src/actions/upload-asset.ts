@@ -1,3 +1,4 @@
+import { ZObject, Bundle } from 'zapier-platform-core';
 import utils from '../utils.js';
 
 const uploadAsset = {
@@ -24,7 +25,7 @@ const uploadAsset = {
         helpText: 'Title of the asset',
       },
     ],
-    perform: async (z: any, bundle: any) => {
+    perform: async (z: ZObject, bundle: Bundle): Promise<object> => {
       return await utils.createAsset(z, bundle, {
         title: bundle.inputData.title,
         sourceUrl: bundle.inputData.file,
