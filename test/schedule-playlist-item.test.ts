@@ -48,7 +48,10 @@ describe('Schedule Playlist Item', () => {
         },
       ]);
 
-    const response = await appTester(App.creates.schedule_playlist_item.operation.perform, bundle);
+    const response = await appTester(
+      App.creates.schedule_playlist_item.operation.perform,
+      bundle
+    );
     expect(response.id).toBe('item-123');
   });
 
@@ -89,7 +92,10 @@ describe('Schedule Playlist Item', () => {
         },
       ]);
 
-    const response = await appTester(App.creates.schedule_playlist_item.operation.perform, bundle);
+    const response = await appTester(
+      App.creates.schedule_playlist_item.operation.perform,
+      bundle
+    );
     expect(response.id).toBe('item-123');
   });
 

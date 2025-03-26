@@ -62,8 +62,13 @@ const completeWorkflow = {
         throw new Error('API key is required');
       }
 
-      if (!bundle.inputData.playlist_id && !bundle.inputData.new_playlist_name) {
-        throw new Error('Either select an existing playlist or provide a name for a new one');
+      if (
+        !bundle.inputData.playlist_id &&
+        !bundle.inputData.new_playlist_name
+      ) {
+        throw new Error(
+          'Either select an existing playlist or provide a name for a new one'
+        );
       }
 
       // Upload asset
@@ -109,7 +114,10 @@ const completeWorkflow = {
               name: ZAPIER_TAG,
             },
           });
-          labelId = utils.handleError(labelResponse, 'Failed to create label').id;
+          labelId = utils.handleError(
+            labelResponse,
+            'Failed to create label'
+          ).id;
         }
 
         // Tag the new playlist

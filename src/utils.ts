@@ -2,9 +2,18 @@
 
 import { ZObject, Bundle, HttpResponse } from 'zapier-platform-core';
 import { READY_STATES } from './constants.js';
-import { Asset, PlaylistItem, Playlist, Label, PlaylistLabel } from './types/screenly.js';
+import {
+  Asset,
+  PlaylistItem,
+  Playlist,
+  Label,
+  PlaylistLabel,
+} from './types/screenly.js';
 
-const handleError = <T>(response: HttpResponse<T>, customMessage: string): T => {
+const handleError = <T>(
+  response: HttpResponse<T>,
+  customMessage: string
+): T => {
   if (response.status >= 400) {
     throw new Error(customMessage);
   }
@@ -72,7 +81,11 @@ const createAsset = async (
 const createPlaylistItem = async (
   z: ZObject,
   bundle: Bundle,
-  { assetId, playlistId, duration }: { assetId: string; playlistId: string; duration: number }
+  {
+    assetId,
+    playlistId,
+    duration,
+  }: { assetId: string; playlistId: string; duration: number }
 ): Promise<PlaylistItem> => {
   const payload: PlaylistItem = {
     asset_id: assetId,
@@ -164,7 +177,11 @@ const createPlaylist = async (
   return playlists[0];
 };
 
-const getLabel = async (z: ZObject, bundle: Bundle, { name }: { name: string }): Promise<Label> => {
+const getLabel = async (
+  z: ZObject,
+  bundle: Bundle,
+  { name }: { name: string }
+): Promise<Label> => {
   const queryParams = { name: `eq.${name}` };
   const queryString = new URLSearchParams(queryParams).toString();
 

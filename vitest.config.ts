@@ -11,7 +11,11 @@ export default defineConfig({
       enabled: true,
       provider: 'v8',
       include: ['**/*.ts'],
-      exclude: ['vitest.config.ts', 'vitest.visual.config.ts', 'test/setup.visual.ts'],
+      exclude: [
+        'vitest.config.ts',
+        'vitest.visual.config.ts',
+        'test/setup.visual.ts',
+      ],
       thresholds: {
         branches: 80,
         functions: 80,

@@ -16,7 +16,8 @@ const cleanupZapierContent = {
         label: 'Confirm Cleanup',
         type: 'boolean',
         required: true,
-        helpText: 'Are you sure you want to remove all content created by Zapier?',
+        helpText:
+          'Are you sure you want to remove all content created by Zapier?',
       },
     ],
     perform: async (z: ZObject, bundle: Bundle): Promise<object> => {
@@ -28,9 +29,13 @@ const cleanupZapierContent = {
       const label = await utils.getLabel(z, bundle, { name: ZAPIER_TAG });
 
       // Get all playlists associated with the Zapier tag
-      const playlistToLabelMappings = await utils.getPlaylistsByLabel(z, bundle, {
-        labelId: label.id,
-      });
+      const playlistToLabelMappings = await utils.getPlaylistsByLabel(
+        z,
+        bundle,
+        {
+          labelId: label.id,
+        }
+      );
 
       const playListIds = playlistToLabelMappings.map(
         (mapping: { playlist_id: string }) => mapping.playlist_id

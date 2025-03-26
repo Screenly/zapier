@@ -40,7 +40,11 @@ const schedulePlaylistItem = {
         throw new Error('API key is required');
       }
 
-      await utils.waitForAssetReady(z, bundle.inputData.asset_id, bundle.authData.api_key);
+      await utils.waitForAssetReady(
+        z,
+        bundle.inputData.asset_id,
+        bundle.authData.api_key
+      );
 
       return await utils.createPlaylistItem(z, bundle, {
         assetId: bundle.inputData.asset_id,

@@ -22,7 +22,9 @@ describe('Upload Asset', () => {
       },
     };
 
-    nock('https://example.com').get('/image.jpg').reply(200, 'fake-file-content');
+    nock('https://example.com')
+      .get('/image.jpg')
+      .reply(200, 'fake-file-content');
 
     nock('https://api.screenlyapp.com')
       .post('/api/v4/assets/')
@@ -35,7 +37,10 @@ describe('Upload Asset', () => {
         },
       ]);
 
-    const response = await appTester(App.creates.upload_asset.operation.perform, bundle);
+    const response = await appTester(
+      App.creates.upload_asset.operation.perform,
+      bundle
+    );
     expect(response.id).toBe('asset-123');
     expect(response.title).toBe('Test Image');
     expect(response.duration).toBe(null);
@@ -55,6 +60,8 @@ describe('Upload Asset', () => {
 
     nock('https://example.com').get('/image.jpg').reply(404);
 
-    await expect(appTester(App.creates.upload_asset.operation.perform, bundle)).rejects.toThrow();
+    await expect(
+      appTester(App.creates.upload_asset.operation.perform, bundle)
+    ).rejects.toThrow();
   });
 });

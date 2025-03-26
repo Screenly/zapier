@@ -23,7 +23,9 @@ describe('Complete Workflow', () => {
       },
     };
 
-    nock('https://example.com').get('/test.jpg').reply(200, Buffer.from('fake-image-data'));
+    nock('https://example.com')
+      .get('/test.jpg')
+      .reply(200, Buffer.from('fake-image-data'));
 
     nock('https://api.screenlyapp.com')
       .post('/api/v4/assets/', {
@@ -65,7 +67,10 @@ describe('Complete Workflow', () => {
       })
       .reply(409); // Simulate already assigned
 
-    const response = await appTester(App.creates.complete_workflow.operation.perform, bundle);
+    const response = await appTester(
+      App.creates.complete_workflow.operation.perform,
+      bundle
+    );
     expect(response.asset.id).toBe('asset-123');
     expect(response.playlist_id).toBe('playlist-123');
     expect(response.screen_id).toBe('screen-123');
@@ -83,7 +88,9 @@ describe('Complete Workflow', () => {
       },
     };
 
-    nock('https://example.com').get('/test.jpg').reply(200, Buffer.from('fake-image-data'));
+    nock('https://example.com')
+      .get('/test.jpg')
+      .reply(200, Buffer.from('fake-image-data'));
 
     nock('https://api.screenlyapp.com')
       .post('/api/v4/assets/')
@@ -152,7 +159,10 @@ describe('Complete Workflow', () => {
       })
       .reply(201);
 
-    const response = await appTester(App.creates.complete_workflow.operation.perform, bundle);
+    const response = await appTester(
+      App.creates.complete_workflow.operation.perform,
+      bundle
+    );
     expect(response.asset.id).toBe('asset-123');
     expect(response.playlist_id).toBe('playlist-123');
     expect(response.screen_id).toBe('screen-123');
@@ -170,6 +180,8 @@ describe('Complete Workflow', () => {
 
     await expect(
       appTester(App.creates.complete_workflow.operation.perform, bundle)
-    ).rejects.toThrow('Either select an existing playlist or provide a name for a new one');
+    ).rejects.toThrow(
+      'Either select an existing playlist or provide a name for a new one'
+    );
   });
 });

@@ -52,7 +52,10 @@ describe('Cleanup', () => {
       .matchHeader('Authorization', `Token ${TEST_API_KEY}`)
       .reply(200);
 
-    const response = await appTester(App.creates.cleanup_zapier_content.operation.perform, bundle);
+    const response = await appTester(
+      App.creates.cleanup_zapier_content.operation.perform,
+      bundle
+    );
     expect(response.playlists_removed).toBe(2);
     expect(response.message).toBe('Successfully removed 2 playlists');
   });

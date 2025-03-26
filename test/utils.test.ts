@@ -35,9 +35,9 @@ describe('Utils', () => {
       };
       const bundle = { authData: { api_key: TEST_API_KEY } };
 
-      await expect(utils.getLabel(z, bundle, { name: 'test-label' })).rejects.toThrow(
-        'No labels returned from the Screenly API'
-      );
+      await expect(
+        utils.getLabel(z, bundle, { name: 'test-label' })
+      ).rejects.toThrow('No labels returned from the Screenly API');
     });
   });
 
@@ -52,7 +52,9 @@ describe('Utils', () => {
       };
       const bundle = { authData: { api_key: TEST_API_KEY } };
 
-      const playlists = await utils.getPlaylistsByLabel(z, bundle, { labelId: 'label-123' });
+      const playlists = await utils.getPlaylistsByLabel(z, bundle, {
+        labelId: 'label-123',
+      });
       expect(playlists).toHaveLength(2);
       expect(playlists[0].playlist_id).toBe('playlist-1');
     });
@@ -67,9 +69,9 @@ describe('Utils', () => {
       };
       const bundle = { authData: { api_key: TEST_API_KEY } };
 
-      await expect(utils.getPlaylistsByLabel(z, bundle, { labelId: 'label-123' })).rejects.toThrow(
-        'Failed to fetch playlist to labels'
-      );
+      await expect(
+        utils.getPlaylistsByLabel(z, bundle, { labelId: 'label-123' })
+      ).rejects.toThrow('Failed to fetch playlist to labels');
     });
   });
 
@@ -84,7 +86,9 @@ describe('Utils', () => {
       };
       const bundle = { authData: { api_key: TEST_API_KEY } };
 
-      const result = await utils.deletePlaylist(z, bundle, { playlistId: 'playlist-123' });
+      const result = await utils.deletePlaylist(z, bundle, {
+        playlistId: 'playlist-123',
+      });
       expect(result).toBe(true);
     });
 
@@ -98,7 +102,9 @@ describe('Utils', () => {
       };
       const bundle = { authData: { api_key: TEST_API_KEY } };
 
-      const result = await utils.deletePlaylist(z, bundle, { playlistId: 'playlist-123' });
+      const result = await utils.deletePlaylist(z, bundle, {
+        playlistId: 'playlist-123',
+      });
       expect(result).toBe(false);
     });
   });
@@ -163,9 +169,15 @@ describe('Utils', () => {
         console: { log: vi.fn() },
       };
 
-      const status = await utils.waitForAssetReady(z, 'asset-123', TEST_API_KEY);
+      const status = await utils.waitForAssetReady(
+        z,
+        'asset-123',
+        TEST_API_KEY
+      );
       expect(status).toBe('finished');
-      expect(z.console.log).toHaveBeenCalledWith('Asset asset-123 status: finished');
+      expect(z.console.log).toHaveBeenCalledWith(
+        'Asset asset-123 status: finished'
+      );
     });
   });
 });
