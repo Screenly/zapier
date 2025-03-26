@@ -42,6 +42,8 @@
 - `npm run lint` - Run ESLint
 - `npm run format` - Format code with Prettier
 - `npm run clean` - Clean up generated files
+- `npm run build` - Compile TypeScript code
+- `npm run deploy` - Deploy to Zapier
 - `npm run prepare` - Install git hooks (runs automatically after npm install)
 
 Visual tests are only run in CI environment:
@@ -166,7 +168,7 @@ The integration is automatically deployed to Zapier when a new version tag is pu
 If you wish to deploy the integration privately, you can do so by following the steps below, given that you have completed the [initial setup steps above](#setting-up-zapier-deployment).
 
 ```bash
-zapier push
+npm run build && zapier push
 ```
 
 ## Version Management
