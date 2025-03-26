@@ -1,22 +1,22 @@
 // Utility functions for Screenly Zapier integration
 
-import { ZObject, Bundle } from 'zapier-platform-core';
+import { ZObject, Bundle, HttpResponse } from 'zapier-platform-core';
 import { READY_STATES } from './constants.js';
+import { Asset } from './types/screenly.js';
 
-const handleError = (response: any, customMessage: string) => {
+const handleError = <T>(response: HttpResponse<T>, customMessage: string): T => {
   if (response.status >= 400) {
     throw new Error(customMessage);
   }
 
-  return response.json;
+  return response.data;
 };
 
-interface RequestOptions {
-  headers?: Record<string, string>;
-  [key: string]: any; // Allow other properties
-}
-
-const waitForAssetReady = async (z: ZObject, assetId: string, authToken: string) => {
+const waitForAssetReady = async (
+  z: ZObject,
+  assetId: string,
+  authToken: string
+): Promise<string> => {
   let assetStatus;
   do {
     const statusResponse = await z.request({
@@ -44,7 +44,7 @@ const createAsset = async (
     sourceUrl,
     disableVerification = false,
   }: { title: string; sourceUrl: string; disableVerification?: boolean }
-) => {
+): Promise<Asset> => {
   const response = await z.request({
     url: 'https://api.screenlyapp.com/api/v4/assets/',
     method: 'POST',
