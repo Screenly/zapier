@@ -97,7 +97,7 @@ const completeWorkflow = {
         });
 
         let labelId: string;
-        const existingLabels = labelQueryResponse.json;
+        const existingLabels = labelQueryResponse.data;
 
         if (existingLabels.length > 0) {
           labelId = existingLabels[0].id;
