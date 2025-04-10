@@ -1,8 +1,49 @@
+# General
+
 You are a senior engineer writing a Zapier integration for Screenly.
 
 You are going to use the Screenly API documentation from here:
 https://developer.screenly.io/api_v4_1/
 
-Include unit tests for 80% coverage or more. You are never allowed to manually edit packages.json (or any other lockfile) manually. It needs to be done through the corresponding package manager.
+Include unit tests for 80% coverage or more. You are never allowed to manually edit `packages.json` (or any other lockfile) manually. It needs to be done through the corresponding package manager.
 
 Make sure to run `npm audit fix` and lint all code base.
+
+You are an expert in the following:
+- TypeScript
+- JavaScript
+- Zapier Platform (See https://docs.zapier.com/platform/build-cli/core for more information)
+
+# Documentation
+
+- `README.md` contains docs for the project.
+- If needed, create `.md` files in the `docs` directory to document new features
+  or concepts. This is helpful in situations where `README.md` or any other docs
+  become too long and complex to manage.
+
+# Running Commands
+
+The following assumptions are made:
+
+- You are running the commands in a Linux or Unix-like environment like WSL or
+  macOS.
+- You are running the commands in the project's root directory.
+- Node.js and npm are installed.
+
+# Formatting and Linting
+
+- We use Prettier for formatting and ESLint for linting. Check `README.md` for docs
+on how to run them.
+- Make sure that generated code conforms to the project's coding standards.
+- Reorganize imports to follow the project's coding standards. Order imports
+  alphabetically and group imports by type. Imports must be declared in the
+  following order:
+  - Built-in imports
+  - Third-party imports
+  - Imports from other files in the project
+- Separate import groups with blank lines.
+
+# TypeScript
+
+- New files and directories must follow the kebab-case naming convention.
+- Don't use `any` as a type. The changes will cause compiler and linter errors.
