@@ -43,12 +43,12 @@ describe('Cleanup', () => {
 
     // Mock playlist deletions
     nock('https://api.screenlyapp.com')
-      .delete('/api/v4/playlists/?id=eq.playlist-1/')
+      .delete('/api/v4/playlists/?id=eq.playlist-1')
       .matchHeader('Authorization', `Token ${TEST_API_KEY}`)
       .reply(200);
 
     nock('https://api.screenlyapp.com')
-      .delete('/api/v4/playlists/?id=eq.playlist-2/')
+      .delete('/api/v4/playlists/?id=eq.playlist-2')
       .matchHeader('Authorization', `Token ${TEST_API_KEY}`)
       .reply(200);
 
