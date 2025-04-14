@@ -28,8 +28,9 @@ const waitForAssetReady = async (
 ): Promise<string> => {
   let assetStatus;
   do {
+    const params = new URLSearchParams({ id: `eq.${assetId}` });
     const statusResponse = await z.request({
-      url: `https://api.screenlyapp.com/api/v4/assets?id=eq.${assetId}`,
+      url: `https://api.screenlyapp.com/api/v4/assets?${params.toString()}`,
       headers: {
         Authorization: `Token ${authToken}`,
       },
@@ -182,11 +183,10 @@ const getLabel = async (
   bundle: Bundle,
   { name }: { name: string }
 ): Promise<Label> => {
-  const queryParams = { name: `eq.${name}` };
-  const queryString = new URLSearchParams(queryParams).toString();
+  const params = new URLSearchParams({ name: `eq.${name}` });
 
   const response = await z.request({
-    url: `https://api.screenlyapp.com/api/v4/labels/?${queryString}`,
+    url: `https://api.screenlyapp.com/api/v4/labels/?${params.toString()}`,
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
@@ -207,8 +207,9 @@ const getPlaylistsByLabel = async (
   bundle: Bundle,
   { labelId }: { labelId: string }
 ): Promise<PlaylistLabel[]> => {
+  const params = new URLSearchParams({ label_id: `eq.${labelId}` });
   const response = await z.request({
-    url: `https://api.screenlyapp.com/api/v4/labels/playlists?label_id=eq.${labelId}`,
+    url: `https://api.screenlyapp.com/api/v4/labels/playlists?${params.toString()}`,
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
@@ -225,8 +226,9 @@ const deletePlaylist = async (
   bundle: Bundle,
   { playlistId }: { playlistId: string }
 ): Promise<boolean> => {
+  const params = new URLSearchParams({ id: `eq.${playlistId}` });
   const response = await z.request({
-    url: `https://api.screenlyapp.com/api/v4/playlists/?id=eq.${playlistId}/`,
+    url: `https://api.screenlyapp.com/api/v4/playlists/?${params.toString()}`,
     method: 'DELETE',
     headers: {
       'Content-Type': 'application/json',
