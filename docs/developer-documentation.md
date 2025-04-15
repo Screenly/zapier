@@ -24,7 +24,7 @@
    npm run prepare
 
    # Add pre-commit hook
-   npx husky add .husky/pre-commit "npm test && npm run lint"
+   npx husky add .husky/pre-commit "npm test && npm run lint:check && npm run format:check"
 
    # Install linting tools
    npm install -D eslint prettier markdownlint-cli
@@ -39,8 +39,10 @@
 
 - `npm test` - Run unit tests with coverage
 - `npm run test:watch` - Run tests in watch mode
-- `npm run lint` - Run ESLint
-- `npm run format` - Format code with Prettier
+- `npm run lint:check` - Run ESLint
+- `npm run lint:fix` - Run ESLint and fix linting errors
+- `npm run format:check` - Run Prettier
+- `npm run format:fix` - Run Prettier and fix formatting errors
 - `npm run clean` - Clean up generated files
 - `npm run build` - Compile TypeScript code
 - `npm run deploy` - Deploy to Zapier
@@ -65,8 +67,8 @@ The project uses several tools to ensure code quality:
 These run automatically on commit, but you can also run them manually:
 
 ```bash
-npm run lint    # Check code style
-npm run format  # Fix code formatting
+npm run lint:check    # Check code style
+npm run format:check  # Check code formatting
 ```
 
 ## Git Hooks
@@ -115,7 +117,8 @@ These tests are skipped locally to avoid environment-specific issues.
 
    - ESLint and Prettier are configured
    - Formatting is automatically handled on commit
-   - Run `npm run format` to manually format code
+   - Run `npm run format:check` to check code formatting
+   - Run `npm run format:fix` to manually format code
 
 3. **Testing**
 
