@@ -10,6 +10,9 @@ Screenly Zapier Integration
   <a href="https://github.com/screenly/zapier/actions/workflows/test.yml?query=branch%3Amaster">
     <img src="https://img.shields.io/github/actions/workflow/status/screenly/zapier/test.yml?branch=master&style=for-the-badge&label=Test&logo=github" alt="Test Status">
   </a>
+  <a href="https://github.com/screenly/zapier/actions/workflows/lint.yml?query=branch%3Amaster">
+    <img src="https://img.shields.io/github/actions/workflow/status/screenly/zapier/lint.yml?branch=master&style=for-the-badge&label=Lint&logo=github" alt="Lint Status">
+  </a>
 </p>
 
 A Zapier [integration](https://zapier.com/apps/screenly/integrations) for automating Screenly digital signage operations. Connect your
