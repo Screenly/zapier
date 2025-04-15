@@ -13,8 +13,10 @@
     "test:visual": "echo 'Visual tests are only run in CI environment' && CI=true vitest run --config vitest.visual.config.ts",
     "test:visual:ci": "vitest run --config vitest.visual.config.ts",
     "deploy": "zapier push",
-    "lint": "eslint .",
-    "format": "prettier --write .",
+    "lint:check": "eslint .",
+    "lint:fix": "eslint --fix .",
+    "format:fix": "prettier --write .",
+    "format:check": "prettier --check .",
     "prepare": "npx husky",
     "clean": "rimraf coverage __image_snapshots__ dist",
     "build": "npm run clean && tsc"
