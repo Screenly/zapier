@@ -28,7 +28,7 @@ Do everything in one step:
 
 Maintain your content library:
 
-- Remove Zapier-created playlists
+- Remove playlists and assets created by Zapier
 - Safe deletion with confirmation
 
 ## 5. Assign Screen to Playlist
