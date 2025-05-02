@@ -2,7 +2,7 @@ import zapier from 'zapier-platform-core';
 import App from '../src/index.js';
 import nock from 'nock';
 import { describe, beforeEach, test, expect } from 'vitest';
-
+import { ZAPIER_TAG } from '../src/constants.js';
 const TEST_API_KEY = 'valid-api-key';
 const appTester = zapier.createAppTester(App);
 
@@ -32,6 +32,9 @@ describe('Complete Workflow', () => {
         title: 'Test Asset',
         source_url: 'https://example.com/test.jpg',
         disable_verification: false,
+        metadata: {
+          tags: [ZAPIER_TAG],
+        },
       })
       .reply(201, [
         {
