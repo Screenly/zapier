@@ -11,8 +11,13 @@ const getAssets = {
   },
   operation: {
     perform: async (z: ZObject, bundle: Bundle): Promise<object> => {
+      const queryParams = [
+        'and=(type.not.eq.edge-app-file,type.not.eq.edge-app)',
+        'or=(status.eq.downloading,status.eq.processing,status.eq.finished)',
+      ].join('&');
+
       const response = await z.request({
-        url: 'https://api.screenlyapp.com/api/v4/assets/',
+        url: `https://api.screenlyapp.com/api/v4/assets/?${queryParams}`,
         headers: {
           Authorization: `Token ${bundle.authData.api_key}`,
         },

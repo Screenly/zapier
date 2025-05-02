@@ -42,8 +42,13 @@ describe('Dynamic Dropdowns', () => {
       },
     };
 
+    const queryParams = [
+      'and=(type.not.eq.edge-app-file,type.not.eq.edge-app)',
+      'or=(status.eq.downloading,status.eq.processing,status.eq.finished)',
+    ].join('&');
+
     nock('https://api.screenlyapp.com')
-      .get('/api/v4/assets/')
+      .get(`/api/v4/assets/?${queryParams}`)
       .matchHeader('Authorization', `Token ${TEST_API_KEY}`)
       .reply(200, [
         { id: 'asset-1', title: 'Asset 1' },
