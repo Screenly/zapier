@@ -1,7 +1,7 @@
 // Utility functions for Screenly Zapier integration
 
 import { ZObject, Bundle, HttpResponse } from 'zapier-platform-core';
-import { READY_STATES, ZAPIER_TAG } from './constants.js';
+import { READY_STATES, ZAPIER_TAG, ASSET_STATUS_QUERY } from './constants.js';
 import {
   Asset,
   PlaylistItem,
@@ -270,7 +270,7 @@ const getAssetsCreatedByZapier = async (
 ): Promise<Asset[]> => {
   const queryParams = [
     'metadata->tags=cs.["created_by_zapier"]',
-    'or=(status.eq.downloading,status.eq.processing,status.eq.finished)',
+    ASSET_STATUS_QUERY,
   ].join('&');
 
   const response = await z.request({
