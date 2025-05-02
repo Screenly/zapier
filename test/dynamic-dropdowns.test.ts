@@ -2,6 +2,7 @@ import zapier from 'zapier-platform-core';
 import App from '../src/index.js';
 import nock from 'nock';
 import { describe, beforeEach, test, expect } from 'vitest';
+import { ASSET_STATUS_QUERY } from '../src/constants.js';
 
 const TEST_API_KEY = 'valid-api-key';
 const appTester = zapier.createAppTester(App);
@@ -44,7 +45,7 @@ describe('Dynamic Dropdowns', () => {
 
     const queryParams = [
       'and=(type.not.eq.edge-app-file,type.not.eq.edge-app)',
-      'or=(status.eq.downloading,status.eq.processing,status.eq.finished)',
+      ASSET_STATUS_QUERY,
     ].join('&');
 
     nock('https://api.screenlyapp.com')

@@ -2,6 +2,7 @@ import zapier from 'zapier-platform-core';
 import App from '../src/index.js';
 import nock from 'nock';
 import { describe, beforeEach, test, expect } from 'vitest';
+import { ASSET_STATUS_QUERY } from '../src/constants.js';
 
 const TEST_API_KEY = 'valid-api-key';
 const appTester = zapier.createAppTester(App);
@@ -59,10 +60,13 @@ describe('Cleanup', () => {
       .reply(200);
 
     // Mock assets created by Zapier
+    const queryParams = [
+      'metadata->tags=cs.["created_by_zapier"]',
+      ASSET_STATUS_QUERY,
+    ].join('&');
+
     nock('https://api.screenlyapp.com')
-      .get(
-        '/api/v4/assets/?metadata->tags=cs.["created_by_zapier"]&or=(status.eq.downloading,status.eq.processing,status.eq.finished)'
-      )
+      .get(`/api/v4/assets/?${queryParams}`)
       .matchHeader('Authorization', `Token ${TEST_API_KEY}`)
       .reply(200, [{ id: 'asset-1' }, { id: 'asset-2' }]);
 

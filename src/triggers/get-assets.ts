@@ -1,5 +1,6 @@
 import { ZObject, Bundle } from 'zapier-platform-core';
 import utils from '../utils.js';
+import { ASSET_STATUS_QUERY } from '../constants.js';
 
 const getAssets = {
   key: 'get_assets',
@@ -13,7 +14,7 @@ const getAssets = {
     perform: async (z: ZObject, bundle: Bundle): Promise<object> => {
       const queryParams = [
         'and=(type.not.eq.edge-app-file,type.not.eq.edge-app)',
-        'or=(status.eq.downloading,status.eq.processing,status.eq.finished)',
+        ASSET_STATUS_QUERY,
       ].join('&');
 
       const response = await z.request({
