@@ -1,7 +1,7 @@
 // Utility functions for Screenly Zapier integration
 
 import { ZObject, Bundle, HttpResponse } from 'zapier-platform-core';
-import { READY_STATES } from './constants.js';
+import { READY_STATES, ZAPIER_TAG } from './constants.js';
 import {
   Asset,
   PlaylistItem,
@@ -67,6 +67,9 @@ const createAsset = async (
       title,
       source_url: sourceUrl,
       disable_verification: disableVerification,
+      metadata: {
+        tags: [ZAPIER_TAG],
+      },
     },
   });
 
