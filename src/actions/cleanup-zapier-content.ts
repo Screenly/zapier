@@ -1,4 +1,5 @@
 import { ZObject, Bundle } from 'zapier-platform-core';
+
 import utils from '../utils.js';
 import { ZAPIER_TAG } from '../constants.js';
 
@@ -40,24 +41,38 @@ const cleanupZapierContent = {
       const playListIds = playlistToLabelMappings.map(
         (mapping: { playlist_id: string }) => mapping.playlist_id
       );
-      let successfulDeletions = 0;
+      let successfulPlaylistDeletions = 0;
+      let successfulAssetDeletions = 0;
 
       // Delete each playlist
       for (const playlistId of playListIds) {
         const success = await utils.deletePlaylist(z, bundle, { playlistId });
         if (success) {
-          successfulDeletions++;
+          successfulPlaylistDeletions++;
+        }
+      }
+
+      const taggedAssets = await utils.getAssetsCreatedByZapier(z, bundle);
+
+      for (const asset of taggedAssets) {
+        const success = await utils.deleteAsset(z, bundle, {
+          assetId: asset.id,
+        });
+        if (success) {
+          successfulAssetDeletions++;
         }
       }
 
       return {
-        playlists_removed: successfulDeletions,
-        message: `Successfully removed ${successfulDeletions} playlists`,
+        playlists_removed: successfulPlaylistDeletions,
+        assets_removed: successfulAssetDeletions,
+        message: `Successfully removed ${successfulPlaylistDeletions} playlists and ${successfulAssetDeletions} assets`,
       };
     },
     sample: {
       playlists_removed: 1,
-      message: 'Successfully removed 1 playlist',
+      assets_removed: 2,
+      message: 'Successfully removed 1 playlist and 2 assets',
     },
   },
 };

@@ -6,6 +6,12 @@ import { describe, beforeEach, test, expect } from 'vitest';
 const TEST_API_KEY = 'valid-api-key';
 const appTester = zapier.createAppTester(App);
 
+interface CleanupResponse {
+  playlists_removed: number;
+  assets_removed: number;
+  message: string;
+}
+
 describe('Cleanup', () => {
   beforeEach(() => {
     nock.cleanAll();
@@ -52,12 +58,35 @@ describe('Cleanup', () => {
       .matchHeader('Authorization', `Token ${TEST_API_KEY}`)
       .reply(200);
 
-    const response = await appTester(
+    // Mock assets created by Zapier
+    nock('https://api.screenlyapp.com')
+      .get(
+        '/api/v4/assets/?metadata->tags=cs.["created_by_zapier"]&or=(status.eq.downloading,status.eq.processing,status.eq.finished)'
+      )
+      .matchHeader('Authorization', `Token ${TEST_API_KEY}`)
+      .reply(200, [{ id: 'asset-1' }, { id: 'asset-2' }]);
+
+    // Mock asset deletions
+    nock('https://api.screenlyapp.com')
+      .delete('/api/v4/assets/?id=eq.asset-1')
+      .matchHeader('Authorization', `Token ${TEST_API_KEY}`)
+      .reply(200);
+
+    nock('https://api.screenlyapp.com')
+      .delete('/api/v4/assets/?id=eq.asset-2')
+      .matchHeader('Authorization', `Token ${TEST_API_KEY}`)
+      .reply(200);
+
+    const response = (await appTester(
       App.creates.cleanup_zapier_content.operation.perform,
       bundle
-    );
+    )) as CleanupResponse;
+
     expect(response.playlists_removed).toBe(2);
-    expect(response.message).toBe('Successfully removed 2 playlists');
+    expect(response.assets_removed).toBe(2);
+    expect(response.message).toBe(
+      'Successfully removed 2 playlists and 2 assets'
+    );
   });
 
   test('requires confirmation', async () => {
