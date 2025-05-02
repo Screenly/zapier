@@ -244,6 +244,48 @@ const deletePlaylist = async (
   return response.status === 200;
 };
 
+const deleteAsset = async (
+  z: ZObject,
+  bundle: Bundle,
+  { assetId }: { assetId: string }
+): Promise<boolean> => {
+  const params = new URLSearchParams({ id: `eq.${assetId}` });
+  const response = await z.request({
+    url: `https://api.screenlyapp.com/api/v4/assets/?${params.toString()}`,
+    method: 'DELETE',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Token ${bundle.authData.api_key}`,
+      Prefer: 'return=representation',
+    },
+    skipThrowForStatus: true,
+  });
+
+  return response.status === 200;
+};
+
+const getAssetsCreatedByZapier = async (
+  z: ZObject,
+  bundle: Bundle
+): Promise<Asset[]> => {
+  const queryParams = [
+    'metadata->tags=cs.["created_by_zapier"]',
+    'or=(status.eq.downloading,status.eq.processing,status.eq.finished)',
+  ].join('&');
+
+  const response = await z.request({
+    url: `https://api.screenlyapp.com/api/v4/assets/?${queryParams}`,
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Token ${bundle.authData.api_key}`,
+      Prefer: 'return=representation',
+    },
+  });
+
+  return handleError(response, 'Failed to fetch assets');
+};
+
 export default {
   handleError,
   waitForAssetReady,
@@ -254,4 +296,6 @@ export default {
   getLabel,
   getPlaylistsByLabel,
   deletePlaylist,
+  deleteAsset,
+  getAssetsCreatedByZapier,
 };
