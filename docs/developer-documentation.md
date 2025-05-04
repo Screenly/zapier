@@ -160,8 +160,8 @@ The integration is automatically deployed to Zapier when a new version tag is pu
 1. Create and push a new version tag:
 
    ```bash
-   git tag -a v0.5.0 -m "New release"
-   git push origin v0.5.0
+   git tag -a v0.6.0 -m "New release"
+   git push origin v0.6.0
    ```
 
 2. The GitHub Action will:
@@ -177,7 +177,7 @@ npm run build && zapier push
 ## Version Management
 
 - Use semantic versioning (MAJOR.MINOR.PATCH)
-- Tag format: `v*.*.*` (e.g., v0.5.0, v1.0.0)
+- Tag format: `v*.*.*` (e.g., v0.6.0, v1.0.0)
 - Pre-release versions: Use `-beta`, `-alpha` suffixes
 
 ## License
