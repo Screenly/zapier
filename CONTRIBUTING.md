@@ -63,6 +63,11 @@ Thank you for your interest in contributing to the Screenly Zapier Integration! 
 1. Ensure all tests pass and coverage requirements are met
 1. Create a Pull Request with a clear title and description
 1. Link any relevant issues
+1. Link the pull request to at least one of the following labels:
+   - `bug`
+   - `enhancement`
+   - `documentation`
+   - `chore`
 
 ## Working with the Screenly API
 
