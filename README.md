@@ -25,6 +25,7 @@ Check out our tutorials for getting started with the Screenly Zapier integration
 - [Manage digital signage content with Box & Zapier](https://www.screenly.io/tutorials/box/)
 - [Use Dropbox & Zapier to manage digital signage content](https://www.screenly.io/tutorials/dropbox/)
 - [Use Google Drive to manage Screenly via Zapier](https://www.screenly.io/tutorials/google-drive/)
+- [Use OneDrive & Zapier to manage digital signage content](https://www.screenly.io/tutorials/onedrive/)
 
 ## :zap: Quick Links
 
