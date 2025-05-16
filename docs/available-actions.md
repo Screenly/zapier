@@ -8,11 +8,12 @@ Upload files to your Screenly account:
 - Set custom titles and durations
 - Accepts files via URL or direct upload
 
-## 2. Add to Playlist
+## 2. Add Asset to Playlist
 
 Add content to your playlists:
 
 - Choose from your existing playlists
+- Either create a new asset or use an existing asset
 - Set display duration
 
 ## 3. Complete Workflow
