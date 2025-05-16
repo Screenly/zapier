@@ -19,12 +19,30 @@ const schedulePlaylistItem = {
         helpText: 'Select the playlist',
       },
       {
+        key: 'is_new_asset',
+        label: 'Create a new asset?',
+        type: 'boolean',
+        required: true,
+        helpText: 'Create a new asset?',
+      },
+      {
         key: 'asset_id',
         label: 'Asset',
         type: 'string',
-        required: true,
+        required: false,
         dynamic: 'get_assets.id.title',
         helpText: 'Select the asset to schedule',
+      },
+      {
+        key: 'file',
+        label: 'File URL',
+        type: 'string',
+        required: true,
+        helpText: 'The URL of the file to upload',
+      },
+      {
+        key: 'title',
+        label: 'Title of the asset',
       },
       {
         key: 'duration',
@@ -46,8 +64,21 @@ const schedulePlaylistItem = {
         bundle.authData.api_key
       );
 
+      let assetId = null;
+      const isNewAsset = bundle.inputData.is_new_asset;
+
+      if (isNewAsset) {
+        const asset = await utils.createAsset(z, bundle, {
+          title: bundle.inputData.title,
+          sourceUrl: bundle.inputData.file,
+        });
+        assetId = asset.id;
+      } else {
+        assetId = bundle.inputData.asset_id;
+      }
+
       return await utils.createPlaylistItem(z, bundle, {
-        assetId: bundle.inputData.asset_id,
+        assetId: assetId,
         playlistId: bundle.inputData.playlist_id,
         duration: bundle.inputData.duration,
       });
