@@ -37,12 +37,15 @@ const schedulePlaylistItem = {
         key: 'file',
         label: 'File URL',
         type: 'string',
-        required: true,
+        required: false,
         helpText: 'The URL of the file to upload',
       },
       {
         key: 'title',
-        label: 'Title of the asset',
+        label: 'Title',
+        type: 'string',
+        required: false,
+        helpText: 'Title of the asset',
       },
       {
         key: 'duration',
