@@ -1,4 +1,4 @@
-import puppeteer, { type Browser, type Page } from 'puppeteer';
+import puppeteer, { type Browser, type Page } from 'puppeteer-core';
 import {
   describe,
   beforeEach,
@@ -19,6 +19,10 @@ describeVisual('Zapier Visual Tests', () => {
   beforeAll(async () => {
     browser = await puppeteer.launch({
       headless: true,
+      // puppeteer-core ships no bundled browser; CI installs system Chrome
+      // and exports its path (see .github/workflows/test.yml).
+      executablePath:
+        process.env.CHROME_PATH ?? process.env.PUPPETEER_EXECUTABLE_PATH,
       args: [
         '--no-sandbox',
         '--disable-setuid-sandbox',
