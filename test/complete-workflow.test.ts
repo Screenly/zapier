@@ -187,4 +187,128 @@ describe('Complete Workflow', () => {
       'Either select an existing playlist or provide a name for a new one'
     );
   });
+
+  test('requires an API key', async () => {
+    const bundle = {
+      authData: {},
+      inputData: {
+        file: 'https://example.com/test.jpg',
+        title: 'Test Asset',
+        playlist_id: 'playlist-123',
+        screen_id: 'screen-123',
+      },
+    };
+
+    await expect(
+      appTester(App.creates.complete_workflow.operation.perform, bundle)
+    ).rejects.toThrow('API key is required');
+  });
+
+  test('reuses the existing Zapier label when one already exists', async () => {
+    const bundle = {
+      authData: { api_key: TEST_API_KEY },
+      inputData: {
+        file: 'https://example.com/test.jpg',
+        title: 'Test Asset',
+        new_playlist_name: 'New Playlist',
+        screen_id: 'screen-123',
+        duration: 15,
+      },
+    };
+
+    nock('https://example.com')
+      .get('/test.jpg')
+      .reply(200, Buffer.from('fake-image-data'));
+
+    nock('https://api.screenlyapp.com')
+      .post('/api/v4/assets/')
+      .reply(201, [{ id: 'asset-123', title: 'Test Asset' }]);
+
+    nock('https://api.screenlyapp.com')
+      .post('/api/v4/playlists')
+      .reply(201, [{ id: 'playlist-123', name: 'New Playlist' }]);
+
+    // An existing label short-circuits the label-creation request below.
+    nock('https://api.screenlyapp.com')
+      .get('/api/v4/labels?name=eq.created_by_zapier')
+      .reply(200, [{ id: 'label-existing', name: 'created_by_zapier' }]);
+
+    const labelCreation = nock('https://api.screenlyapp.com')
+      .post('/api/v4/labels/')
+      .reply(201, { id: 'label-should-not-be-used' });
+
+    nock('https://api.screenlyapp.com')
+      .post('/api/v4/labels/playlists', {
+        playlist_id: 'playlist-123',
+        label_id: 'label-existing',
+      })
+      .reply(201);
+
+    nock('https://api.screenlyapp.com')
+      .get('/api/v4/assets?id=eq.asset-123')
+      .reply(200, [{ id: 'asset-123', status: 'finished' }]);
+
+    nock('https://api.screenlyapp.com')
+      .post('/api/v4/playlist-items/')
+      .reply(201, { id: 'item-123' });
+
+    nock('https://api.screenlyapp.com')
+      .post('/api/v4/labels/playlists', {
+        playlist_id: 'playlist-123',
+        label_id: 'screen-123',
+      })
+      .reply(201);
+
+    const response = await appTester(
+      App.creates.complete_workflow.operation.perform,
+      bundle
+    );
+
+    expect(response.playlist_id).toBe('playlist-123');
+    expect(labelCreation.isDone()).toBe(false);
+  });
+
+  test('falls back to a 10 second duration when none is given', async () => {
+    const bundle = {
+      authData: { api_key: TEST_API_KEY },
+      inputData: {
+        file: 'https://example.com/test.jpg',
+        title: 'Test Asset',
+        playlist_id: 'playlist-123',
+        screen_id: 'screen-123',
+      },
+    };
+
+    nock('https://example.com')
+      .get('/test.jpg')
+      .reply(200, Buffer.from('fake-image-data'));
+
+    nock('https://api.screenlyapp.com')
+      .post('/api/v4/assets/')
+      .reply(201, [{ id: 'asset-123', title: 'Test Asset' }]);
+
+    nock('https://api.screenlyapp.com')
+      .get('/api/v4/assets?id=eq.asset-123')
+      .reply(200, [{ id: 'asset-123', status: 'finished' }]);
+
+    const playlistItem = nock('https://api.screenlyapp.com')
+      .post('/api/v4/playlist-items/', {
+        asset_id: 'asset-123',
+        playlist_id: 'playlist-123',
+        duration: 10,
+      })
+      .reply(201, { id: 'item-123' });
+
+    nock('https://api.screenlyapp.com')
+      .post('/api/v4/labels/playlists')
+      .reply(201);
+
+    const response = await appTester(
+      App.creates.complete_workflow.operation.perform,
+      bundle
+    );
+
+    expect(response.playlist_id).toBe('playlist-123');
+    expect(playlistItem.isDone()).toBe(true);
+  });
 });
