@@ -237,7 +237,7 @@ describe('Complete Workflow', () => {
       .post('/api/v4/labels/')
       .reply(201, { id: 'label-should-not-be-used' });
 
-    nock('https://api.screenlyapp.com')
+    const existingLabelTagging = nock('https://api.screenlyapp.com')
       .post('/api/v4/labels/playlists', {
         playlist_id: 'playlist-123',
         label_id: 'label-existing',
@@ -250,7 +250,7 @@ describe('Complete Workflow', () => {
 
     nock('https://api.screenlyapp.com')
       .post('/api/v4/playlist-items/')
-      .reply(201, { id: 'item-123' });
+      .reply(201, [{ id: 'item-123' }]);
 
     nock('https://api.screenlyapp.com')
       .post('/api/v4/labels/playlists', {
@@ -266,6 +266,7 @@ describe('Complete Workflow', () => {
 
     expect(response.playlist_id).toBe('playlist-123');
     expect(labelCreation.isDone()).toBe(false);
+    expect(existingLabelTagging.isDone()).toBe(true);
   });
 
   test('falls back to a 10 second duration when none is given', async () => {
@@ -297,7 +298,7 @@ describe('Complete Workflow', () => {
         playlist_id: 'playlist-123',
         duration: 10,
       })
-      .reply(201, { id: 'item-123' });
+      .reply(201, [{ id: 'item-123' }]);
 
     nock('https://api.screenlyapp.com')
       .post('/api/v4/labels/playlists')
