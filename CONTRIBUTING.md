@@ -78,7 +78,8 @@ Thank you for your interest in contributing to the Screenly Zapier Integration! 
 
 1. The maintainers will review your PR
 1. Once approved, it will be merged to main
-1. Releases are created following semantic versioning
+1. Releases are created following CalVer `YYYY.M.MICRO` — see
+   [Version Management](docs/developer-documentation.md#version-management)
 
 ## Questions or Problems?
 
