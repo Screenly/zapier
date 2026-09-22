@@ -157,14 +157,17 @@ The command will create a new folder called `dist/`, which is referenced by `ind
 
 The integration is automatically deployed to Zapier when a new version tag is pushed to GitHub.
 
-1. Create and push a new version tag:
+1. Bump `package.json` (and `package-lock.json`) to the new CalVer version and
+   merge that to `master`. This is the version Zapier receives.
+
+2. Tag the merged commit and push it:
 
    ```bash
-   git tag -a v0.6.0 -m "New release"
-   git push origin v0.6.0
+   git tag -a v2026.9.0 -m "New release"
+   git push origin v2026.9.0
    ```
 
-2. The GitHub Action will:
+3. The GitHub Action will:
    - Run tests
    - Deploy to Zapier
 
@@ -176,9 +179,16 @@ npm run build && zapier push
 
 ## Version Management
 
-- Use semantic versioning (MAJOR.MINOR.PATCH)
-- Tag format: `v*.*.*` (e.g., v0.6.0, v1.0.0)
-- Pre-release versions: Use `-beta`, `-alpha` suffixes
+- Use CalVer `YYYY.M.MICRO`, with no zero padding on the month: `2026.9.0`,
+  `2026.10.0`. A new month resets MICRO to `0`; a second release in the same
+  month increments it.
+- Tag format: `vYYYY.M.MICRO` (e.g. `v2026.9.0`). The `v` prefix is what
+  `zapier-release.yml` triggers on.
+- **`package.json` is the version that reaches Zapier**, not the tag. `zapier
+  push` reads it, and the tag only starts the workflow. Bump `package.json` (and
+  `package-lock.json`) on master *first*, then tag that commit. A tag that
+  disagrees with `package.json` deploys the wrong version silently, with
+  nothing to catch it: that is how `v0.6.1` came to ship `0.6.0`.
 
 ## License
 
