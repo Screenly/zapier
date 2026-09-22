@@ -1,6 +1,6 @@
 {
   "name": "zapier-screenly",
-  "version": "0.6.0",
+  "version": "2026.9.0",
   "description": "Screenly integration for Zapier platform",
   "main": "dist/index.js",
   "type": "commonjs",
