@@ -126,4 +126,66 @@ describe('Cleanup', () => {
       appTester(App.creates.cleanup_zapier_content.operation.perform, bundle)
     ).rejects.toThrow('No labels returned from the Screenly API');
   });
+
+  test('does not count deletions the API rejects', async () => {
+    const bundle = {
+      authData: {
+        api_key: TEST_API_KEY,
+      },
+      inputData: {
+        confirm: true,
+      },
+    };
+
+    nock('https://api.screenlyapp.com')
+      .get('/api/v4/labels/?name=eq.created_by_zapier')
+      .matchHeader('Authorization', `Token ${TEST_API_KEY}`)
+      .reply(200, [{ id: 'label-123', name: 'created_by_zapier' }]);
+
+    nock('https://api.screenlyapp.com')
+      .get('/api/v4/labels/playlists?label_id=eq.label-123')
+      .matchHeader('Authorization', `Token ${TEST_API_KEY}`)
+      .reply(200, [
+        { playlist_id: 'playlist-1', label_id: 'label-123' },
+        { playlist_id: 'playlist-2', label_id: 'label-123' },
+      ]);
+
+    // One playlist deletion succeeds, the other is rejected.
+    nock('https://api.screenlyapp.com')
+      .delete('/api/v4/playlists/?id=eq.playlist-1')
+      .reply(200);
+
+    nock('https://api.screenlyapp.com')
+      .delete('/api/v4/playlists/?id=eq.playlist-2')
+      .reply(404, { detail: 'Not found' });
+
+    const queryParams = [
+      'metadata->tags=cs.["created_by_zapier"]',
+      ASSET_STATUS_QUERY,
+    ].join('&');
+
+    nock('https://api.screenlyapp.com')
+      .get(`/api/v4/assets/?${queryParams}`)
+      .reply(200, [{ id: 'asset-1' }, { id: 'asset-2' }]);
+
+    // Both asset deletions are rejected.
+    nock('https://api.screenlyapp.com')
+      .delete('/api/v4/assets/?id=eq.asset-1')
+      .reply(409, { detail: 'Conflict' });
+
+    nock('https://api.screenlyapp.com')
+      .delete('/api/v4/assets/?id=eq.asset-2')
+      .reply(500, { detail: 'Server error' });
+
+    const response = (await appTester(
+      App.creates.cleanup_zapier_content.operation.perform,
+      bundle
+    )) as CleanupResponse;
+
+    expect(response.playlists_removed).toBe(1);
+    expect(response.assets_removed).toBe(0);
+    expect(response.message).toBe(
+      'Successfully removed 1 playlists and 0 assets'
+    );
+  });
 });

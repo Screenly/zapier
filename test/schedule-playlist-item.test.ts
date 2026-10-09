@@ -142,4 +142,63 @@ describe('Schedule Playlist Item', () => {
       appTester(App.creates.schedule_playlist_item.operation.perform, bundle)
     ).rejects.toThrow();
   });
+
+  test('requires an API key', async () => {
+    const bundle = {
+      authData: {},
+      inputData: {
+        playlist_id: 'playlist-123',
+        asset_id: 'asset-123',
+      },
+    };
+
+    await expect(
+      appTester(App.creates.schedule_playlist_item.operation.perform, bundle)
+    ).rejects.toThrow('API key is required');
+  });
+
+  test('creates a new asset when is_new_asset is set', async () => {
+    const bundle = {
+      authData: {
+        api_key: TEST_API_KEY,
+      },
+      inputData: {
+        playlist_id: 'playlist-123',
+        is_new_asset: true,
+        title: 'New Asset',
+        file: 'https://example.com/asset.jpg',
+        duration: 15,
+      },
+    };
+
+    nock('https://api.screenlyapp.com')
+      .post('/api/v4/assets/', {
+        title: 'New Asset',
+        source_url: 'https://example.com/asset.jpg',
+        disable_verification: false,
+        metadata: { tags: ['created_by_zapier'] },
+      })
+      .matchHeader('Authorization', `Token ${TEST_API_KEY}`)
+      .reply(201, [{ id: 'asset-456', status: 'downloading' }]);
+
+    nock('https://api.screenlyapp.com')
+      .get('/api/v4/assets?id=eq.asset-456')
+      .matchHeader('Authorization', `Token ${TEST_API_KEY}`)
+      .reply(200, [{ id: 'asset-456', status: 'finished' }]);
+
+    nock('https://api.screenlyapp.com')
+      .post('/api/v4/playlist-items/', {
+        asset_id: 'asset-456',
+        playlist_id: 'playlist-123',
+        duration: 15,
+      })
+      .matchHeader('Authorization', `Token ${TEST_API_KEY}`)
+      .reply(201, [{ id: 'item-456' }]);
+
+    const response = await appTester(
+      App.creates.schedule_playlist_item.operation.perform,
+      bundle
+    );
+    expect(response.id).toBe('item-456');
+  });
 });

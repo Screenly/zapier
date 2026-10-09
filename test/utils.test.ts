@@ -180,4 +180,119 @@ describe('Utils', () => {
       );
     });
   });
+
+  describe('createAsset', () => {
+    it('throws error when no assets returned', async () => {
+      const z = {
+        request: vi.fn().mockResolvedValue({
+          status: 201,
+          data: [],
+        }),
+        authData: { api_key: TEST_API_KEY },
+      };
+      const bundle = { authData: { api_key: TEST_API_KEY } };
+
+      await expect(
+        utils.createAsset(z, bundle, {
+          title: 'Test Asset',
+          sourceUrl: 'https://example.com/asset.jpg',
+        })
+      ).rejects.toThrow('No assets returned from the Screenly API');
+    });
+  });
+
+  describe('createPlaylistItem', () => {
+    it('omits duration from the payload when it is not set', async () => {
+      const z = {
+        request: vi.fn().mockResolvedValue({
+          status: 201,
+          data: [{ id: 'item-123' }],
+        }),
+        authData: { api_key: TEST_API_KEY },
+      };
+      const bundle = { authData: { api_key: TEST_API_KEY } };
+
+      const item = await utils.createPlaylistItem(z, bundle, {
+        assetId: 'asset-123',
+        playlistId: 'playlist-123',
+        duration: 0,
+      });
+
+      expect(item.id).toBe('item-123');
+      expect(z.request.mock.calls[0][0].body).toEqual({
+        asset_id: 'asset-123',
+        playlist_id: 'playlist-123',
+      });
+    });
+
+    it('throws error when no playlist items returned', async () => {
+      const z = {
+        request: vi.fn().mockResolvedValue({
+          status: 201,
+          data: [],
+        }),
+        authData: { api_key: TEST_API_KEY },
+      };
+      const bundle = { authData: { api_key: TEST_API_KEY } };
+
+      await expect(
+        utils.createPlaylistItem(z, bundle, {
+          assetId: 'asset-123',
+          playlistId: 'playlist-123',
+          duration: 10,
+        })
+      ).rejects.toThrow('No playlist items returned from the Screenly API');
+    });
+  });
+
+  describe('assignPlaylistToScreen', () => {
+    it('treats a 409 as an already-assigned no-op', async () => {
+      const z = {
+        request: vi.fn().mockResolvedValue({ status: 409, data: {} }),
+        console: { log: vi.fn() },
+        authData: { api_key: TEST_API_KEY },
+      };
+      const bundle = { authData: { api_key: TEST_API_KEY } };
+
+      const result = await utils.assignPlaylistToScreen(z, bundle, {
+        screenId: 'screen-123',
+        playlistId: 'playlist-123',
+      });
+
+      expect(result.message).toBe('Successfully assigned playlist to screen');
+      expect(z.console.log).toHaveBeenCalledWith(
+        'Playlist already assigned to screen'
+      );
+    });
+
+    it('throws on a non-409 error response', async () => {
+      const z = {
+        request: vi.fn().mockResolvedValue({ status: 500, data: {} }),
+        console: { log: vi.fn() },
+        authData: { api_key: TEST_API_KEY },
+      };
+      const bundle = { authData: { api_key: TEST_API_KEY } };
+
+      await expect(
+        utils.assignPlaylistToScreen(z, bundle, {
+          screenId: 'screen-123',
+          playlistId: 'playlist-123',
+        })
+      ).rejects.toThrow('Failed to assign playlist to screen');
+    });
+  });
+
+  describe('deleteAsset', () => {
+    it('reports failure when the API does not return 200', async () => {
+      const z = {
+        request: vi.fn().mockResolvedValue({ status: 404, data: {} }),
+        authData: { api_key: TEST_API_KEY },
+      };
+      const bundle = { authData: { api_key: TEST_API_KEY } };
+
+      await expect(
+        utils.deleteAsset(z, bundle, { assetId: 'asset-123' })
+      ).resolves.toBe(false);
+    });
+  });
 });
