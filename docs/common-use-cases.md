@@ -44,7 +44,7 @@
     - Return to default seasonal playlist
     - Disable rain-specific promotions
 
-### Setup Steps:
+### Setup Steps
 
 1. Create weather-specific playlists in Screenly:
    - "Summer Treats" - cold items
@@ -58,7 +58,7 @@
      - Enable/Disable appropriate playlists
      - Update content based on current conditions
 
-### Benefits:
+### Benefits
 
 - Automatically adapt to multiple weather conditions
 - Increase sales with contextual promotions

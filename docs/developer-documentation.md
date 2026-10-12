@@ -27,7 +27,7 @@
    npx husky add .husky/pre-commit "npm test && npm run lint:check && npm run format:check"
 
    # Install linting tools
-   npm install -D eslint prettier markdownlint-cli
+   npm install -D eslint prettier
    ```
 
 3. Configure your Screenly API key:
@@ -62,7 +62,7 @@ The project uses several tools to ensure code quality:
 - **Vitest** - For testing
 - **Husky** - For git hooks
 - **lint-staged** - For running checks on staged files
-- **markdownlint** - For markdown formatting
+- **markdownlint** - Lints Markdown in CI (`.github/workflows/markdown-lint.yml`)
 
 These run automatically on commit, but you can also run them manually:
 
@@ -78,7 +78,6 @@ Pre-commit hooks are set up to:
 - Run unit tests
 - Lint JavaScript files
 - Format code with Prettier
-- Check markdown formatting
 - Run tests
 
 The hooks are configured in:
@@ -149,7 +148,7 @@ These tests are skipped locally to avoid environment-specific issues.
 
 Compile the TypeScript code so that JavaScript code will be generated:
 
-```
+```bash
 npm run build
 ```
 
