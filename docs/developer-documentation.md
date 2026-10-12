@@ -62,6 +62,7 @@ The project uses several tools to ensure code quality:
 - **Vitest** - For testing
 - **Husky** - For git hooks
 - **lint-staged** - For running checks on staged files
+- **markdownlint** - Lints Markdown in CI (`.github/workflows/markdown-lint.yml`)
 
 These run automatically on commit, but you can also run them manually:
 
@@ -147,7 +148,7 @@ These tests are skipped locally to avoid environment-specific issues.
 
 Compile the TypeScript code so that JavaScript code will be generated:
 
-```
+```bash
 npm run build
 ```
 
