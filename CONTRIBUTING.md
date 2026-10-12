@@ -6,11 +6,14 @@ Thank you for your interest in contributing to the Screenly Zapier Integration! 
 
 1. Fork the repository
 2. Clone your fork:
+
    ```bash
    git clone https://github.com/YOUR_USERNAME/zapier
    cd zapier
    ```
+
 3. Install dependencies:
+
    ```bash
    npm install
    ```
@@ -20,6 +23,7 @@ Thank you for your interest in contributing to the Screenly Zapier Integration! 
 - Node.js (LTS version recommended)
 - npm (comes with Node.js)
 - Zapier CLI:
+
   ```bash
   npm install -g zapier-platform-cli
   ```
@@ -39,9 +43,11 @@ Thank you for your interest in contributing to the Screenly Zapier Integration! 
    - Security audit passes: `npm audit`
 
 1. Commit your changes:
+
    ```bash
    git commit -m "feat: add new feature"
    ```
+
    Please follow [Conventional Commits](https://www.conventionalcommits.org/) specification.
 
 ## Testing
